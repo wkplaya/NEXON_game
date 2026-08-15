@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NEXON RWA Game</title>
-    <!-- Официальный скрипт Telegram Web App -->
     <script src="https://telegram.org"></script>
     <style>
         body {
@@ -26,9 +25,9 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
         }
-        .balance-item { text-align: center; }
-        .balance-item span { display: block; font-size: 12px; color: #aaa; }
-        .balance-item strong { font-size: 18px; color: #4e9f3d; }
+        .balance-item { text-align: center; width: 48%; }
+        .balance-item span { display: block; font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px;}
+        .balance-item strong { font-size: 16px; color: #4e9f3d; display: block; margin-top: 3px; }
         .balance-item strong.nexon { color: #00adb5; }
         
         .section {
@@ -38,138 +37,150 @@
             margin-bottom: 15px;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        h3 { margin-top: 0; color: #ff2e63; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
+        h3 { margin-top: 0; color: #ff2e63; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;}
         
-        .btn {
-            background: #ff2e63;
-            color: white;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
+        .card-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 5px;
         }
-        .btn:active { transform: scale(0.98); opacity: 0.9; }
-        .btn:disabled { background: #555; cursor: not-allowed; }
-
-        .biz-card {
+        .card-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
             border-radius: 8px;
-            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.03);
         }
-        .biz-info div { font-size: 14px; font-weight: bold; }
-        .biz-info span { font-size: 11px; color: #888; }
-        .buy-buttons { display: flex; gap: 5px; }
-        .btn-sm { padding: 6px 10px; font-size: 12px; width: auto; background: #4e9f3d;}
+        .card-info { flex: 1; }
+        .card-info div { font-size: 14px; font-weight: bold; color: #fff; }
+        .card-info span { font-size: 11px; color: #bbb; display: block; margin-top: 3px;}
+        .card-info .vacancies { color: #f9d342; font-weight: bold; font-size: 11px; margin-top: 2px;}
+        
+        .btn-sm { 
+            padding: 8px 14px; 
+            font-size: 12px; 
+            background: #00adb5; 
+            color: #fff; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-sm:active { transform: scale(0.95); }
+        .btn-sm:disabled { background: #444!important; color: #888!important; cursor: not-allowed; }
+        .btn-green { background: #4e9f3d; }
         .btn-stars { background: #f9d342; color: #292826; }
+        .buy-buttons { display: flex; flex-direction: column; gap: 4px; }
     </style>
 </head>
 <body>
 
-    <!-- Шапка с балансами -->
     <div class="header">
         <div class="balance-item">
             <span>Игровой Баланс</span>
-            <strong id="cash-display">500.00 руб.</strong>
+            <strong>0.00 руб.</strong>
         </div>
         <div class="balance-item">
             <span>Баланс NEXON</span>
-            <strong id="nexon-display" class="nexon">0.0000 NXN</strong>
+            <strong class="nexon">0.0000 NXN</strong>
         </div>
     </div>
 
-    <!-- Модуль работы -->
     <div class="section">
         <h3>🛠 Биржа Труда (Смена 8 часов)</h3>
-        <p id="work-text" style="font-size: 13px; color: #ccc;">Устройтесь на работу, чтобы заработать стартовый капитал.</p>
-        <button id="work-btn" class="btn" onclick="startWork()">💼 Начать смену</button>
+        <div class="card-list" id="jobs-container"></div>
     </div>
 
-    <!-- Модуль RWA Бизнеса -->
     <div class="section">
         <h3>🏢 Доступный RWA-Бизнес</h3>
-        
-        <div class="biz-card">
-            <div class="biz-info">
-                <div>🌱 Эко-Кофейня</div>
-                <span>Доход: +0.05 NXN/ч</span>
+        <div class="card-list">
+            
+            <div class="card-item">
+                <div class="card-info">
+                    <div>🌱 Эко-Кофейня</div>
+                    <span>Доход/ч: +2.00 руб. | +0.01 NXN</span>
+                </div>
+                <div class="buy-buttons">
+                    <button class="btn-sm btn-green" onclick="processBuy('eco_cafe', 'cash')">10к руб.</button>
+                    <button class="btn-sm btn-stars" onclick="processBuy('eco_cafe', 'real')">350 руб.</button>
+                </div>
             </div>
-            <div class="buy-buttons">
-                <button class="btn btn-sm" onclick="buyBiz('eco_cafe', 'cash')">1500 р.</button>
-                <button class="btn btn-sm btn-stars" onclick="buyBiz('eco_cafe', 'stars')">⭐ 250</button>
-            </div>
-        </div>
 
-        <div class="biz-card">
-            <div class="biz-info">
-                <div>💻 IT-Компания</div>
-                <span>Доход: +0.20 NXN/ч</span>
+            <div class="card-item">
+                <div class="card-info">
+                    <div>🚜 Эко-Ферма</div>
+                    <span>Доход/ч: +12.00 руб. | +0.04 NXN</span>
+                </div>
+                <div class="buy-buttons">
+                    <button class="btn-sm btn-green" onclick="processBuy('eco_farm', 'cash')">50к руб.</button>
+                    <button class="btn-sm btn-stars" onclick="processBuy('eco_farm', 'real')">1400 руб.</button>
+                </div>
             </div>
-            <div class="buy-buttons">
-                <button class="btn btn-sm" onclick="buyBiz('it_company', 'cash')">5000 р.</button>
-                <button class="btn btn-sm btn-stars" onclick="buyBiz('it_company', 'stars')">⭐ 750</button>
+
+            <div class="card-item">
+                <div class="card-info">
+                    <div>💻 IT-Компания</div>
+                    <span>Доход/ч: +30.00 руб. | +0.15 NXN</span>
+                </div>
+                <div class="buy-buttons">
+                    <button class="btn-sm btn-green" onclick="processBuy('it_company', 'cash')">120к руб.</button>
+                    <button class="btn-sm btn-stars" onclick="processBuy('it_company', 'real')">3200 руб.</button>
+                </div>
             </div>
+
         </div>
     </div>
 
     <script>
-        // Инициализация Telegram Web App API
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Развернуть приложение на весь экран
+        tg.expand();
 
-        // Базовые стартовые значения для визуализации в MVP
-        let userWallet = { cash: 500, nexon: 0.0 };
-        let isWorking = false;
-        let workTimeLeft = 8 * 3600;
+        const AVAILABLE_JOBS = [
+            { id: "promoter", name: "📢 Промоутер", salary: 300, max: 100, current: 34 },
+            { id: "courier", name: "🚴 Курьер", salary: 500, max: 70, current: 41 },
+            { id: "barista", name: "☕ Бариста", salary: 700, max: 40, current: 39 },
+            { id: "cashier", name: "🛒 Кассир", salary: 950, max: 30, current: 12 },
+            { id: "manager", name: "📈 Менеджер продаж", salary: 1300, max: 20, current: 20 },
+            { id: "designer", name: "🎨 Веб-Дизайнер", salary: 1800, max: 15, current: 8 },
+            { id: "farmer", name: "🚜 Управляющий фермы", salary: 2400, max: 10, current: 3 },
+            { id: "engineer", name: "⚙️ DevOps Инженер", salary: 3200, max: 5, current: 1 },
+            { id: "teamlead", name: "👔 IT Тимлид", salary: 4500, max: 3, current: 3 },
+            { id: "director", name: "👑 CEO Корпорации", salary: 6000, max: 1, current: 0 }
+        ];
 
-        function updateUI() {
-            document.getElementById('cash-display').innerText = userWallet.cash.toFixed(2) + " руб.";
-            document.getElementById('nexon-display').innerText = userWallet.nexon.toFixed(4) + " NXN";
+        const container = document.getElementById('jobs-container');
+        AVAILABLE_JOBS.forEach(job => {
+            const isFull = job.current >= job.max;
+            const item = document.createElement('div');
+            item.className = 'card-item';
+            item.innerHTML = `
+                <div class="card-info">
+                    <div>${job.name}</div>
+                    <span>Оплата: <b>${job.salary} руб.</b> за смену</span>
+                    <span class="vacancies">Вакансии: ${job.current}/${job.max}</span>
+                </div>
+                <button class="btn-sm" ${isFull ? 'disabled' : ''} onclick="processWork('${job.id}')">
+                    ${isFull ? 'Занято' : 'Вход'}
+                </button>
+            `;
+            container.appendChild(item);
+        });
+
+        function processWork(id) {
+            tg.sendData(JSON.stringify({ action: "start_work", job_id: id }));
+            tg.close();
         }
 
-        function startWork() {
-            if (isWorking) return;
-            isWorking = true;
-            document.getElementById('work-btn').disabled = true;
-            
-            let interval = setInterval(() => {
-                if(workTimeLeft <= 0) {
-                    clearInterval(interval);
-                    isWorking = false;
-                    userWallet.cash += 500;
-                    workTimeLeft = 8 * 3600; // сброс таймера
-                    document.getElementById('work-btn').disabled = false;
-                    document.getElementById('work-text').innerText = "Смена завершена! +500 руб.";
-                    updateUI();
-                } else {
-                    workTimeLeft--;
-                    let hours = Math.floor(workTimeLeft / 3600);
-                    let mins = Math.floor((workTimeLeft % 3600) / 60);
-                    let secs = workTimeLeft % 60;
-                    document.getElementById('work-text').innerText = `Вы на работе. Осталось: ${hours}ч ${mins}м ${secs}с`;
-                }
-            }, 1000);
+        function processBuy(key, method) {
+            tg.sendData(JSON.stringify({ action: "buy_business", type: key, payment_method: method }));
+            tg.close();
         }
-
-        function buyBiz(bizKey, method) {
-            // Отправка данных обратно в телеграм бот при клике на покупку
-            tg.sendData(JSON.stringify({
-                action: "buy_business",
-                type: bizKey,
-                payment_method: method
-            }));
-            tg.close(); // Закрываем WebApp после действия
-        }
-
-        updateUI();
     </script>
 </body>
 </html>
-
