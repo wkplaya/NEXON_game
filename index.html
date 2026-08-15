@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXON RWA Game</title>
+    <!-- Официальный скрипт Telegram Web App -->
+    <script src="https://telegram.org"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #161623 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 15px;
+            user-select: none;
+            overflow-x: hidden;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .balance-item { text-align: center; }
+        .balance-item span { display: block; font-size: 12px; color: #aaa; }
+        .balance-item strong { font-size: 18px; color: #4e9f3d; }
+        .balance-item strong.nexon { color: #00adb5; }
+        
+        .section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        h3 { margin-top: 0; color: #ff2e63; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
+        
+        .btn {
+            background: #ff2e63;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+        .btn:disabled { background: #555; cursor: not-allowed; }
+
+        .biz-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .biz-info div { font-size: 14px; font-weight: bold; }
+        .biz-info span { font-size: 11px; color: #888; }
+        .buy-buttons { display: flex; gap: 5px; }
+        .btn-sm { padding: 6px 10px; font-size: 12px; width: auto; background: #4e9f3d;}
+        .btn-stars { background: #f9d342; color: #292826; }
+    </style>
+</head>
+<body>
+
+    <!-- Шапка с балансами -->
+    <div class="header">
+        <div class="balance-item">
+            <span>Игровой Баланс</span>
+            <strong id="cash-display">500.00 руб.</strong>
+        </div>
+        <div class="balance-item">
+            <span>Баланс NEXON</span>
+            <strong id="nexon-display" class="nexon">0.0000 NXN</strong>
+        </div>
+    </div>
+
+    <!-- Модуль работы -->
+    <div class="section">
+        <h3>🛠 Биржа Труда (Смена 8 часов)</h3>
+        <p id="work-text" style="font-size: 13px; color: #ccc;">Устройтесь на работу, чтобы заработать стартовый капитал.</p>
+        <button id="work-btn" class="btn" onclick="startWork()">💼 Начать смену</button>
+    </div>
+
+    <!-- Модуль RWA Бизнеса -->
+    <div class="section">
+        <h3>🏢 Доступный RWA-Бизнес</h3>
+        
+        <div class="biz-card">
+            <div class="biz-info">
+                <div>🌱 Эко-Кофейня</div>
+                <span>Доход: +0.05 NXN/ч</span>
+            </div>
+            <div class="buy-buttons">
+                <button class="btn btn-sm" onclick="buyBiz('eco_cafe', 'cash')">1500 р.</button>
+                <button class="btn btn-sm btn-stars" onclick="buyBiz('eco_cafe', 'stars')">⭐ 250</button>
+            </div>
+        </div>
+
+        <div class="biz-card">
+            <div class="biz-info">
+                <div>💻 IT-Компания</div>
+                <span>Доход: +0.20 NXN/ч</span>
+            </div>
+            <div class="buy-buttons">
+                <button class="btn btn-sm" onclick="buyBiz('it_company', 'cash')">5000 р.</button>
+                <button class="btn btn-sm btn-stars" onclick="buyBiz('it_company', 'stars')">⭐ 750</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App API
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Развернуть приложение на весь экран
+
+        // Базовые стартовые значения для визуализации в MVP
+        let userWallet = { cash: 500, nexon: 0.0 };
+        let isWorking = false;
+        let workTimeLeft = 8 * 3600;
+
+        function updateUI() {
+            document.getElementById('cash-display').innerText = userWallet.cash.toFixed(2) + " руб.";
+            document.getElementById('nexon-display').innerText = userWallet.nexon.toFixed(4) + " NXN";
+        }
+
+        function startWork() {
+            if (isWorking) return;
+            isWorking = true;
+            document.getElementById('work-btn').disabled = true;
+            
+            let interval = setInterval(() => {
+                if(workTimeLeft <= 0) {
+                    clearInterval(interval);
+                    isWorking = false;
+                    userWallet.cash += 500;
+                    workTimeLeft = 8 * 3600; // сброс таймера
+                    document.getElementById('work-btn').disabled = false;
+                    document.getElementById('work-text').innerText = "Смена завершена! +500 руб.";
+                    updateUI();
+                } else {
+                    workTimeLeft--;
+                    let hours = Math.floor(workTimeLeft / 3600);
+                    let mins = Math.floor((workTimeLeft % 3600) / 60);
+                    let secs = workTimeLeft % 60;
+                    document.getElementById('work-text').innerText = `Вы на работе. Осталось: ${hours}ч ${mins}м ${secs}с`;
+                }
+            }, 1000);
+        }
+
+        function buyBiz(bizKey, method) {
+            // Отправка данных обратно в телеграм бот при клике на покупку
+            tg.sendData(JSON.stringify({
+                action: "buy_business",
+                type: bizKey,
+                payment_method: method
+            }));
+            tg.close(); // Закрываем WebApp после действия
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
+
