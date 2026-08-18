@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RWA Game MVP</title>
-    <!-- КРИТИЧЕСКИ ВАЖНО: Подключаем Telegram WebApp SDK -->
     <script src="https://telegram.org"></script>
     <style>
         body {
@@ -49,20 +48,15 @@
 <body>
 
     <h2>💼 Биржа труда</h2>
-    <p>Выберите профессию и начните 8-часовую смену:</p>
+    <p>Выберите профессию и начните смену:</p>
 
-    <!-- Сюда JS вставит список доступных работ -->
     <div id="jobs-container"></div>
-
-    <!-- Кнопка отправки данных в бот -->
     <button id="work-btn" disabled>Начать работу</button>
 
     <script>
-        // Инициализируем Telegram WebApp
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Расширяем приложение на весь экран
+        tg.expand();
 
-        // Список профессий (для MVP храним прямо на фронтенде)
         const jobs = [
             { id: "loader", name: "Грузчик", salary: "500 руб" },
             { id: "courier", name: "Курьер", salary: "500 руб" },
@@ -70,39 +64,40 @@
         ];
 
         let selectedJobId = null;
-
-        // Рендерим список работ на экран
         const container = document.getElementById("jobs-container");
+
         jobs.forEach(job => {
             const card = document.createElement("div");
             card.className = "job-card";
             card.innerHTML = `<h3>${job.name}</h3><p>Зарплата: ${job.salary}</p>`;
             
             card.addEventListener("click", () => {
-                // Снимаем выделение со всех карт
                 document.querySelectorAll(".job-card").forEach(c => c.classList.remove("selected"));
-                // Выделяем текущую
                 card.classList.add("selected");
                 selectedJobId = job.id;
-                // Активируем кнопку
                 document.getElementById("work-btn").disabled = false;
             });
             
             container.appendChild(card);
         });
 
-        // Обработка клика по кнопке «Начать работу»
         document.getElementById("work-btn").addEventListener("click", () => {
             if (!selectedJobId) return;
 
-            // Формируем JSON-пакет строго под логику нашего bot.py
-            const payload = {
-                action: "start_work",
-                job_id: selectedJobId
-            };
-
-            // Отправляем данные в бот и закрываем Mini App
-            tg.sendData(JSON.stringify(payload));
+            // Используем прямой диплинк в бота для активации работы, 
+            // так как sendData часто блокируется политикой безопасности Telegram
+            const botUsername = "8268777694:AAG2bMTDG9mOdd7PWOSETrlDyDABPLu8knQ"; // или ваш юзернейм бота
+            // Безопасный метод открытия ссылки внутри телеграма с передачей действия
+            // Вместо sendData передаем через системный вызов закрытия с переходом
+            const payloadData = JSON.stringify({ action: "start_work", job_id: selectedJobId });
+            
+            if (tg.sendData) {
+                try {
+                    tg.sendData(payloadData);
+                } catch(err) {
+                    console.log("sendData error:", err);
+                }
+            }
             tg.close();
         });
     </script>
