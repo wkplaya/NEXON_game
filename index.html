@@ -2,112 +2,109 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXON RWA Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RWA Game MVP</title>
+    <!-- КРИТИЧЕСКИ ВАЖНО: Подключаем Telegram WebApp SDK -->
     <script src="https://telegram.org"></script>
     <style>
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #161623 100%); color: #ffffff; margin: 0; padding: 15px; user-select: none; overflow-x: hidden; }
-        .header { display: flex; justify-content: space-between; background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        .balance-item { text-align: center; width: 48%; }
-        .balance-item span { display: block; font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px;}
-        .balance-item strong { font-size: 16px; color: #4e9f3d; display: block; margin-top: 3px; }
-        .balance-item strong.nexon { color: #00adb5; }
-        .section { background: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255, 255, 255, 0.05); }
-        h3 { margin-top: 0; color: #ff2e63; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;}
-        .card-list { display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; padding-right: 5px; }
-        .card-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03); }
-        .card-info { flex: 1; }
-        .card-info div { font-size: 14px; font-weight: bold; color: #fff; }
-        .card-info span { font-size: 11px; color: #bbb; display: block; margin-top: 3px;}
-        .card-info .vacancies { color: #f9d342; font-weight: bold; font-size: 11px; margin-top: 2px;}
-        .btn-sm { padding: 8px 14px; font-size: 12px; background: #00adb5; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-sm:active { transform: scale(0.95); }
-        .btn-sm:disabled { background: #444!important; color: #888!important; cursor: not-allowed; }
-        .btn-green { background: #4e9f3d; }
-        .btn-stars { background: #f9d342; color: #292826; }
-        .buy-buttons { display: flex; flex-direction: column; gap: 4px; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        .job-card {
+            background-color: #2a2a2a;
+            border: 2px solid #3a3a3a;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px auto;
+            max-width: 300px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .job-card.selected {
+            border-color: #0088cc;
+            background-color: #223344;
+        }
+        button {
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+        button:disabled {
+            background-color: #555555;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="balance-item"><span>Игровой Баланс</span><strong>0.00 руб.</strong></div>
-        <div class="balance-item"><span>Баланс NEXON</span><strong class="nexon">0.0000 NXN</strong></div>
-    </div>
-    <div class="section">
-        <h3>🛠 Биржа Труда (Смена 8 часов)</h3>
-        <div class="card-list" id="jobs-container"></div>
-    </div>
-    <div class="section">
-        <h3>🏢 Доступный RWA-Бизнес</h3>
-        <div class="card-list">
-            <div class="card-item">
-                <div class="card-info"><div>🌱 Эко-Кофейня</div><span>Доход/ч: +2.00 руб. | +0.01 NXN</span></div>
-                <div class="buy-buttons">
-                    <button class="btn-sm btn-green" onclick="processBuy('eco_cafe', 'cash')">10к руб.</button>
-                    <button class="btn-sm btn-stars" onclick="processBuy('eco_cafe', 'real')">350 руб.</button>
-                </div>
-            </div>
-            <div class="card-item">
-                <div class="card-info"><div>🚜 Эко-Ферма</div><span>Доход/ч: +12.00 руб. | +0.04 NXN</span></div>
-                <div class="buy-buttons">
-                    <button class="btn-sm btn-green" onclick="processBuy('eco_farm', 'cash')">50к руб.</button>
-                    <button class="btn-sm btn-stars" onclick="processBuy('eco_farm', 'real')">1400 руб.</button>
-                </div>
-            </div>
-            <div class="card-item">
-                <div class="card-info"><div>💻 IT-Компания</div><span>Доход/ч: +30.00 руб. | +0.15 NXN</span></div>
-                <div class="buy-buttons">
-                    <button class="btn-sm btn-green" onclick="processBuy('it_company', 'cash')">120к руб.</button>
-                    <button class="btn-sm btn-stars" onclick="processBuy('it_company', 'real')">3200 руб.</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
 
-        const AVAILABLE_JOBS = [
-            { id: "promoter", name: "📢 Промоутер", salary: 300, max: 100, current: 34 },
-            { id: "courier", name: "🚴 Курьер", salary: 500, max: 70, current: 41 },
-            { id: "barista", name: "☕ Бариста", salary: 700, max: 40, current: 39 },
-            { id: "cashier", name: "🛒 Кассир", salary: 950, max: 30, current: 12 },
-            { id: "manager", name: "📈 Менеджер продаж", salary: 1300, max: 20, current: 20 },
-            { id: "designer", name: "🎨 Веб-Дизайнер", salary: 1800, max: 15, current: 8 },
-            { id: "farmer", name: "🚜 Управляющий фермы", salary: 2400, max: 10, current: 3 },
-            { id: "engineer", name: "⚙️ DevOps Инженер", salary: 3200, max: 5, current: 1 },
-            { id: "teamlead", name: "👔 IT Тимлид", salary: 4500, max: 3, current: 3 },
-            { id: "director", name: "👑 CEO Корпорации", salary: 6000, max: 1, current: 0 }
+    <h2>💼 Биржа труда</h2>
+    <p>Выберите профессию и начните 8-часовую смену:</p>
+
+    <!-- Сюда JS вставит список доступных работ -->
+    <div id="jobs-container"></div>
+
+    <!-- Кнопка отправки данных в бот -->
+    <button id="work-btn" disabled>Начать работу</button>
+
+    <script>
+        // Инициализируем Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Расширяем приложение на весь экран
+
+        // Список профессий (для MVP храним прямо на фронтенде)
+        const jobs = [
+            { id: "loader", name: "Грузчик", salary: "500 руб" },
+            { id: "courier", name: "Курьер", salary: "500 руб" },
+            { id: "driver", name: "Водитель", salary: "500 руб" }
         ];
 
-        const container = document.getElementById('jobs-container');
-        AVAILABLE_JOBS.forEach(job => {
-            const isFull = job.current >= job.max;
-            const item = document.createElement('div');
-            item.className = 'card-item';
-            item.innerHTML = `
-                <div class="card-info">
-                    <div>${job.name}</div>
-                    <span>Оплата: <b>${job.salary} руб.</b> за смену</span>
-                    <span class="vacancies">Вакансии: ${job.current}/${job.max}</span>
-                </div>
-                <button class="btn-sm" ${isFull ? 'disabled' : ''} onclick="processWork('${job.id}')">
-                    ${isFull ? 'Занято' : 'Вход'}
-                </button>
-            `;
-            container.appendChild(item);
+        let selectedJobId = null;
+
+        // Рендерим список работ на экран
+        const container = document.getElementById("jobs-container");
+        jobs.forEach(job => {
+            const card = document.createElement("div");
+            card.className = "job-card";
+            card.innerHTML = `<h3>${job.name}</h3><p>Зарплата: ${job.salary}</p>`;
+            
+            card.addEventListener("click", () => {
+                // Снимаем выделение со всех карт
+                document.querySelectorAll(".job-card").forEach(c => c.classList.remove("selected"));
+                // Выделяем текущую
+                card.classList.add("selected");
+                selectedJobId = job.id;
+                // Активируем кнопку
+                document.getElementById("work-btn").disabled = false;
+            });
+            
+            container.appendChild(card);
         });
 
-        function processWork(id) {
-            // КРИТИЧЕСКИЙ ФИКС: данные отправляем строго строкой, упакованной в JSON
-            tg.sendData(JSON.stringify({ "action": "start_work", "job_id": id }));
-            tg.close();
-        }
+        // Обработка клика по кнопке «Начать работу»
+        document.getElementById("work-btn").addEventListener("click", () => {
+            if (!selectedJobId) return;
 
-        function processBuy(key, method) {
-            tg.sendData(JSON.stringify({ "action": "buy_business", "type": key, "payment_method": method }));
+            // Формируем JSON-пакет строго под логику нашего bot.py
+            const payload = {
+                action: "start_work",
+                job_id: selectedJobId
+            };
+
+            // Отправляем данные в бот и закрываем Mini App
+            tg.sendData(JSON.stringify(payload));
             tg.close();
-        }
+        });
     </script>
 </body>
 </html>
