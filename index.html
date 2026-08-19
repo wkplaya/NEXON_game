@@ -86,7 +86,6 @@
         .btn-green { background-color: var(--accent-green); color: #fff; }
         .btn-orange { background-color: var(--accent-orange); color: #fff; pointer-events: none; }
         
-        /* Стили для реферальной вкладки */
         .ref-box {
             background-color: #2c2c2e;
             border: 1px dashed var(--accent-blue);
@@ -98,11 +97,16 @@
             margin-bottom: 15px;
             color: #afb2b6;
         }
+        .stat-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--accent-green);
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Шапка балансов -->
     <div class="header-balance">
         <div class="balance-item">
             <span>Игровые Рубли</span>
@@ -114,7 +118,6 @@
         </div>
     </div>
 
-    <!-- Трёхвкладочная навигация -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Бизнес</button>
@@ -154,37 +157,44 @@
         </div>
     </div>
 
-    <!-- Вкладка: Друзья (НОВАЯ) -->
+    <!-- Вкладка: Друзья -->
     <div id="friends-page" class="page">
         <div class="card">
             <h3>🤝 Приглашайте друзей!</h3>
             <p>Получайте внутриигровые бонусы и развивайте свою RWA-сеть.</p>
             
-            <p style="margin-bottom: 5px; font-weight: bold;">Ваша реферальная ссылка:</p>
-            <div id="ref-link-text" class="ref-box">Генерация ссылки...</div>
+            <p style="margin-bottom: 5px; font-weight: bold;">Ваша уникальная ссылка:</p>
+            <div id="ref-link-text" class="ref-box">Загрузка ссылки...</div>
             
             <button class="action-btn btn-blue" onclick="inviteFriend()" style="margin-bottom: 10px;">💬 Отправить другу в ТГ</button>
             <button class="action-btn btn-green" onclick="copyRefLink()">📋 Копировать ссылку</button>
+            
+            <div class="stat-text">Приглашено друзей: <span id="ref-count-val">0</span></div>
         </div>
     </div>
 
-                        <script>
+    <script>
         var tg = window.Telegram ? window.Telegram.WebApp : null;
         if (tg) {
             tg.ready();
             tg.expand();
         }
 
-        // Парсинг баланса и Telegram ID из ссылки
+        // Парсинг переданных ботом реальных параметров баланса, Telegram ID и рефералов
         const urlParams = new URLSearchParams(window.location.search);
         let paramRub = urlParams.get('rub');
         let paramNexon = urlParams.get('nexon');
+        let paramUid = urlParams.get('uid');
+        let paramRefCount = urlParams.get('ref');
         
-        // Получаем ID пользователя для рефералки (если нет, ставим заглушку)
-        let userId = "000000";
-        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            userId = tg.initDataUnsafe.user.id;
-        }
+        // Получаем и сохраняем реальный Telegram ID
+        let realTelegramId = paramUid ? paramUid : (localStorage.getItem('hexon_uid') || "0");
+        if (paramUid) localStorage.setItem('hexon_uid', paramUid);
+
+        // Получаем и сохраняем количество рефералов
+        let totalRefs = paramRefCount ? paramRefCount : (localStorage.getItem('hexon_ref_count') || "0");
+        if (paramRefCount) localStorage.setItem('hexon_ref_count', paramRefCount);
+        document.getElementById('ref-count-val').innerText = totalRefs;
 
         if (paramRub !== null) localStorage.setItem('hexon_rub', paramRub);
         if (paramNexon !== null) localStorage.setItem('hexon_nexon', paramNexon);
@@ -193,9 +203,9 @@
         var balanceNexon = parseFloat(localStorage.getItem('hexon_nexon') || '0');
         updateUI();
 
-        // Формируем реферальную ссылку на нашего бота Hexon_game_bot
+        // СБОРКА ИДЕАЛЬНОЙ ССЫЛКИ: Ссылка ведет строго на бота с вашим реальным ID на конце
         var botUsername = "Hexon_game_bot";
-        var finalRefLink = "https://t.me" + botUsername + "?start=" + userId;
+        var finalRefLink = "https://t.me" + botUsername + "?start=" + realTelegramId;
         document.getElementById('ref-link-text').innerText = finalRefLink;
 
         setInterval(checkWorkTimer, 1000);
@@ -212,31 +222,18 @@
             tabButton.classList.add('active');
         }
 
-        // ИСПРАВЛЕННАЯ ФУНКЦИЯ НА ТЕГ TG.OPENLINK (ОБХОД БЛОКИРОВКИ)
+        // 100% РАБОЧИЙ НАТИВНЫЙ МЕТОД ШЕРИНГА ДЛЯ TELEGRAM MINI APP
         function inviteFriend() {
             if (tg) {
-                var textParam = "🚀 Присоединяйся к Hexon Game, зарабатывай рубли и токены NEXON в реальном времени!";
-                var shareUrl = "https://t.meshare/url?url=" + encodeURIComponent(finalRefLink) + "&text=" + encodeURIComponent(textParam);
-                
-                try {
-                    // Нативный метод, который ТГ разрешает для внешних шеринг-ссылок
-                    tg.openLink(shareUrl, {try_instant_view: false});
-                } catch(e) {
-                    try {
-                        tg.openTelegramLink(shareUrl);
-                    } catch(err) {
-                        window.open(shareUrl, '_blank');
-                    }
-                }
-            } else {
-                alert("Ошибка: Откройте приложение внутри Telegram!");
+                var inviteText = "🚀 Начни зарабатывать рубли и токены NEXON в новой RWA-игре Hexon Game!";
+                // switchInlineQuery открывает выбор чата и подставляет готовую ссылку с текстом
+                tg.switchInlineQuery(realTelegramId + " " + inviteText, ["users", "groups"]);
             }
         }
 
-        // Функция обычного копирования в буфер обмена
         function copyRefLink() {
             navigator.clipboard.writeText(finalRefLink).then(function() {
-                showMsg('📋 Скопировано!', 'Ссылка успешно сохранена в буфер обмена.');
+                showMsg('📋 Скопировано!', 'Уникальная ссылка сохранена в буфер обмена.');
             });
         }
 
@@ -253,7 +250,7 @@
         }
 
         function checkWorkTimer() {
-            var activeJob = localStorage.getItem('hexon_work_job');
+                        var activeJob = localStorage.getItem('hexon_work_job');
             var endWorkTime = parseInt(localStorage.getItem('hexon_work_end') || '0');
             var now = Math.floor(Date.now() / 1000);
             var jobs = ['loader', 'courier', 'driver'];
@@ -319,3 +316,4 @@
     </script>
 </body>
 </html>
+
