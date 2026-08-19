@@ -6,7 +6,6 @@
     <title>Hexon Game Hub</title>
     <script src="https://telegram.org"></script>
     <style>
-        /* Настраиваемые цвета темы (легко поменять под себя) */
         :root {
             --bg-color: #121214;
             --card-bg: #1c1c1e;
@@ -14,7 +13,7 @@
             --accent-green: #34c759;
             --text-main: #ffffff;
             --text-muted: #8e8e93;
-            --border-color: #2c2c2e;
+            --border-color: #3a3a3c;
         }
         * { box-sizing: border-box; }
         body {
@@ -43,6 +42,7 @@
             border-radius: 10px;
             padding: 4px;
             margin-bottom: 16px;
+            border: 1px solid var(--border-color);
         }
         .tab {
             flex: 1;
@@ -64,31 +64,28 @@
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
         }
-        .card h3 { margin: 0 0 4px 0; font-size: 16px; }
-        .card p { margin: 0 0 10px 0; font-size: 13px; color: var(--text-muted); }
+        .card h3 { margin: 0 0 6px 0; font-size: 17px; }
+        .card p { margin: 0 0 14px 0; font-size: 13px; color: var(--text-muted); }
         
         .action-btn {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
             font-size: 14px;
             cursor: pointer;
+            text-align: center;
         }
         .btn-blue { background-color: var(--accent-blue); color: #fff; }
         .btn-green { background-color: var(--accent-green); color: #fff; }
-        .btn-disabled { background-color: #3a3a3c; color: var(--text-muted); cursor: not-allowed; }
-        
-        .timer-box { color: #ff9f0a; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
     </style>
 </head>
 <body>
 
-    <!-- Шапка с балансом -->
     <div class="header-balance">
         <div class="balance-item">
             <span>Рубли</span>
@@ -100,34 +97,31 @@
         </div>
     </div>
 
-    <!-- Вкладки -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Купить бизнес</button>
     </div>
 
-    <!-- Страница 1: Работа с кнопками и отсчетом -->
+    <!-- Биржа труда -->
     <div id="work-page" class="page active">
-        <div id="work-status-container" class="timer-box" style="display:none;"></div>
-        
         <div class="card">
             <h3>👷 Грузчик на склад</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button id="btn-work-loader" class="action-btn btn-blue" onclick="triggerAction('work', 'loader')">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="triggerAction('work', 'loader')">Начать смену (8ч)</button>
         </div>
         <div class="card">
             <h3>🚴 Курьер доставки</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button id="btn-work-courier" class="action-btn btn-blue" onclick="triggerAction('work', 'courier')">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="triggerAction('work', 'courier')">Начать смену (8ч)</button>
         </div>
         <div class="card">
             <h3>🚗 Водитель такси</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button id="btn-work-driver" class="action-btn btn-blue" onclick="triggerAction('work', 'driver')">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="triggerAction('work', 'driver')">Начать смену (8ч)</button>
         </div>
     </div>
 
-    <!-- Страница 2: Покупка бизнеса с кнопками -->
+    <!-- Покупка бизнеса -->
     <div id="business-page" class="page">
         <div class="card">
             <h3>🥖 Городская Пекарня</h3>
@@ -162,11 +156,6 @@
             } catch(e) {
                 window.location.href = deepLink;
             }
-        }
-
-        // Пример подгрузки из initData / заглушка отображения
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            // Здесь в будущем можно завязать запрос к вашему python api
         }
     </script>
 </body>
