@@ -147,16 +147,18 @@
             tabButton.classList.add('active');
         }
 
-        function triggerAction(action, itemId) {
+                function triggerAction(action, itemId) {
             const botUsername = "Hexon_game_bot";
-            const deepLink = `https://t.me{botUsername}?start=${action}_${itemId}`;
+            // Формируем прямую нативную ссылку-команду для бота
+            const deepLink = "https://t.me" + botUsername + "?start=" + action + "_" + itemId;
+            
             try {
-                tg.openTelegramLink(deepLink);
-                tg.close();
+                // Используем стопроцентный метод открытия внутренних ссылок Telegram
+                tg.openLink(deepLink, {try_instant_view: false});
+                // Плавно закрываем окно игры через полсекунды
+                setTimeout(function() { tg.close(); }, 500);
             } catch(e) {
+                // Подстраховка для старых версий Telegram
                 window.location.href = deepLink;
             }
         }
-    </script>
-</body>
-</html>
