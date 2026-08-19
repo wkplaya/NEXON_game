@@ -168,7 +168,7 @@
         </div>
     </div>
 
-    <script>
+                        <script>
         var tg = window.Telegram ? window.Telegram.WebApp : null;
         if (tg) {
             tg.ready();
@@ -212,11 +212,24 @@
             tabButton.classList.add('active');
         }
 
-        // Функция ТГ-шеринга ссылки
+        // ИСПРАВЛЕННАЯ ФУНКЦИЯ НА ТЕГ TG.OPENLINK (ОБХОД БЛОКИРОВКИ)
         function inviteFriend() {
             if (tg) {
-                var shareUrl = "https://t.meshare/url?url=" + encodeURIComponent(finalRefLink) + "&text=" + encodeURIComponent("🚀 Присоединяйся к Hexon Game, зарабатывай рубли и токены NEXON в реальном времени!");
-                tg.openTelegramLink(shareUrl);
+                var textParam = "🚀 Присоединяйся к Hexon Game, зарабатывай рубли и токены NEXON в реальном времени!";
+                var shareUrl = "https://t.meshare/url?url=" + encodeURIComponent(finalRefLink) + "&text=" + encodeURIComponent(textParam);
+                
+                try {
+                    // Нативный метод, который ТГ разрешает для внешних шеринг-ссылок
+                    tg.openLink(shareUrl, {try_instant_view: false});
+                } catch(e) {
+                    try {
+                        tg.openTelegramLink(shareUrl);
+                    } catch(err) {
+                        window.open(shareUrl, '_blank');
+                    }
+                }
+            } else {
+                alert("Ошибка: Откройте приложение внутри Telegram!");
             }
         }
 
@@ -252,7 +265,6 @@
                 if (activeJob === jId && endWorkTime > now) {
                     var diff = endWorkTime - now;
                     var hours = Math.floor(diff / 3600);
-                    
                     var minutes = Math.floor((diff % 3600) / 60);
                     var seconds = diff % 60;
                     var timeStr = (hours < 10 ? '0' + hours : hours) + ':' +
