@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RWA Game MVP</title>
+    <title>Hexon Game MVP</title>
+    <!-- Подключаем официальный скрипт Telegram -->
     <script src="https://telegram.org"></script>
     <style>
         body {
@@ -12,92 +13,97 @@
             color: #ffffff;
             text-align: center;
             padding: 20px;
+            margin: 0;
+        }
+        h2 {
+            margin-top: 10px;
+            color: #0088cc;
+        }
+        .job-container {
+            margin-top: 20px;
         }
         .job-card {
             background-color: #2a2a2a;
             border: 2px solid #3a3a3a;
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 15px;
-            margin: 15px auto;
-            max-width: 300px;
+            margin: 12px auto;
+            max-width: 320px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.2s ease-in-out;
+        }
+        .job-card:hover {
+            transform: scale(1.02);
         }
         .job-card.selected {
             border-color: #0088cc;
-            background-color: #223344;
+            background-color: #1a3a54;
+            box-shadow: 0 0 10px rgba(0, 136, 204, 0.5);
         }
-        button {
-            background-color: #0088cc;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 20px;
-            width: 100%;
-            max-width: 300px;
-        }
-        button:disabled {
-            background-color: #555555;
-            cursor: not-allowed;
+        .salary {
+            font-weight: bold;
+            color: #4caf50;
         }
     </style>
 </head>
 <body>
 
     <h2>💼 Биржа труда</h2>
-    <p>Выберите профессию и начните смену:</p>
+    <p>Выберите профессию, чтобы начать 8-часовую смену:</p>
 
-    <div id="jobs-container"></div>
-    <button id="work-btn" disabled>Начать работу</button>
+    <div id="jobs-list" class="job-container"></div>
 
     <script>
+        // Инициализация WebApp среды Telegram
         const tg = window.Telegram.WebApp;
-        tg.expand();
+        tg.expand(); // Открываем приложение на максимум вверх
 
+        // Список профессий
         const jobs = [
-            { id: "loader", name: "Грузчик", salary: "500 руб" },
-            { id: "courier", name: "Курьер", salary: "500 руб" },
-            { id: "driver", name: "Водитель", salary: "500 руб" }
+            { id: "loader", name: "👷 Грузчик", salary: "500 руб" },
+            { id: "courier", name: "🚴 Курьер", salary: "500 руб" },
+            { id: "driver", name: "🚗 Водитель", salary: "500 руб" }
         ];
 
         let selectedJobId = null;
-        const container = document.getElementById("jobs-container");
+        const listElement = document.getElementById("jobs-list");
 
+        // Управление нативной кнопкой Telegram (Main Button)
+        const mainButton = tg.MainButton;
+        mainButton.setText("НАЧАТЬ РАБОТУ");
+        mainButton.color = "#0088cc";
+        mainButton.textColor = "#ffffff";
+
+        // Отрисовка списка профессий на экране
         jobs.forEach(job => {
             const card = document.createElement("div");
             card.className = "job-card";
-            card.innerHTML = `<h3>${job.name}</h3><p>Зарплата: ${job.salary}</p>`;
+            card.innerHTML = `<h3>${job.name}</h3><p>Зарплата за смену: <span class="salary">${job.salary}</span></p>`;
             
             card.addEventListener("click", () => {
+                // Снимаем выделение с других карточек
                 document.querySelectorAll(".job-card").forEach(c => c.classList.remove("selected"));
+                // Выделяем текущую
                 card.classList.add("selected");
                 selectedJobId = job.id;
-                document.getElementById("work-btn").disabled = false;
+                
+                // Показываем нижнюю нативную кнопку Telegram
+                mainButton.show();
             });
             
-            container.appendChild(card);
+            listElement.appendChild(card);
         });
 
-        document.getElementById("work-btn").addEventListener("click", () => {
+        // Обработка клика по системной нижней кнопке Telegram
+        mainButton.onClick(() => {
             if (!selectedJobId) return;
 
-            // Используем прямой диплинк в бота для активации работы, 
-            // так как sendData часто блокируется политикой безопасности Telegram
-            const botUsername = "8268777694:AAG2bMTDG9mOdd7PWOSETrlDyDABPLu8knQ"; // или ваш юзернейм бота
-            // Безопасный метод открытия ссылки внутри телеграма с передачей действия
-            // Вместо sendData передаем через системный вызов закрытия с переходом
-            const payloadData = JSON.stringify({ action: "start_work", job_id: selectedJobId });
+            // Формируем безопасный диплинк для вашего бота @Hexon_game_bot
+            const botUsername = "Hexon_game_bot"; 
+            const deepLink = `https://t.me{botUsername}?start=work_${selectedJobId}`;
             
-            if (tg.sendData) {
-                try {
-                    tg.sendData(payloadData);
-                } catch(err) {
-                    console.log("sendData error:", err);
-                }
-            }
+            // Нативно перенаправляем пользователя в чат и закрываем мини-апп
+            tg.openTelegramLink(deepLink);
             tg.close();
         });
     </script>
