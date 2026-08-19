@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hexon Game</title>
-    <!-- Подключаем SDK Telegram -->
     <script src="https://telegram.org"></script>
     <style>
         * {
@@ -60,6 +59,22 @@
             background-color: #1c2e4a;
             box-shadow: 0 0 10px rgba(0, 136, 204, 0.5);
         }
+        /* Встроенная кнопка-дублер на случай, если нативная кнопка ТГ кэшируется */
+        .action-button {
+            display: none; /* Изначально скрыта, появится при выборе профессии */
+            background-color: #2f80ed;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 25px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 15px rgba(47, 128, 237, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -67,65 +82,78 @@
     <h2>💼 Биржа труда</h2>
     <p class="description">Выберите доступную вакансию для старта смены:</p>
 
-    <!-- Карточки зашиты жестко в HTML, чтобы они гарантированно отображались -->
     <div id="jobs" class="job-list">
-        <div class="job-card" data-id="loader" onclick="selectJob(this, 'loader')">
+        <div class="job-card" onclick="selectJob(this, 'loader')">
             <h3>👷 Грузчик на склад</h3>
             <p>Выплата: 500 руб / 8 часов</p>
         </div>
-        <div class="job-card" data-id="courier" onclick="selectJob(this, 'courier')">
+        <div class="job-card" onclick="selectJob(this, 'courier')">
             <h3>🚴 Курьер доставки</h3>
             <p>Выплата: 500 руб / 8 часов</p>
         </div>
-        <div class="job-card" data-id="driver" onclick="selectJob(this, 'driver')">
+        <div class="job-card" onclick="selectJob(this, 'driver')">
             <h3>🚗 Водитель такси</h3>
             <p>Выплата: 500 руб / 8 часов</p>
         </div>
     </div>
 
+    <!-- Кнопка-дублер прямо на экране сайта -->
+    <button id="screen-action-btn" class="action-button" onclick="startWorkDirectly()">НАЧАТЬ СМЕНУ (8 ЧАСОВ)</button>
+
     <script>
-        // Инициализация WebApp с проверкой на ошибки
-        let tg = null;
-        if (window.Telegram && window.Telegram.WebApp) {
-            tg = window.Telegram.WebApp;
+        let tg = window.Telegram ? window.Telegram.WebApp : null;
+        if (tg) {
             try {
                 tg.ready();
                 tg.expand();
-            } catch(e) {
-                console.error("Ошибка инициализации Telegram SDK:", e);
-            }
+            } catch(e) { console.log(e); }
         }
 
         let selectedJob = null;
 
         function selectJob(element, jobId) {
-            // Убираем старое выделение
+            // Подсвечиваем выбранную карточку визуально
             document.querySelectorAll('.job-card').forEach(card => card.classList.remove('selected'));
-            
-            // Ставим новое
             element.classList.add('selected');
             selectedJob = jobId;
 
-            // Настраиваем системную кнопку, если мы внутри Telegram
+            // 1. Пытаемся показать нативную кнопку Telegram снизу экрана
             if (tg && tg.MainButton) {
-                tg.MainButton.text = "НАЧАТЬ СМЕНУ (8 ЧАСОВ)";
-                tg.MainButton.color = "#2f80ed";
-                tg.MainButton.textColor = "#ffffff";
-                tg.MainButton.show();
+                try {
+                    tg.MainButton.text = "НАЧАТЬ СМЕНУ (8 ЧАСОВ)";
+                    tg.MainButton.color = "#2f80ed";
+                    tg.MainButton.textColor = "#ffffff";
+                    tg.MainButton.show();
+                } catch(e) { console.log(e); }
+            }
+
+            // 2. ВСЕГДА показываем кнопку прямо на самом экране (железная страховка от лагов ТГ)
+            document.getElementById("screen-action-btn").style.display = "block";
+        }
+
+        // Функция отправки команды, которая сработает от любой из двух кнопок
+        function startWorkDirectly() {
+            if (!selectedJob) return;
+
+            const botUsername = "Hexon_game_bot";
+            const link = `https://t.me{botUsername}?start=work_${selectedJob}`;
+            
+            if (tg) {
+                try {
+                    tg.openTelegramLink(link);
+                    tg.close();
+                } catch(e) {
+                    // Если SDK совсем упал, делаем жесткий редирект силами браузера
+                    window.location.href = link;
+                }
+            } else {
+                window.location.href = link;
             }
         }
 
-        // Клик по главной кнопке Telegram внизу экрана
+        // Привязываем клик к нативной кнопке ТГ (если она оживет)
         if (tg && tg.MainButton) {
-            tg.MainButton.onClick(() => {
-                if (!selectedJob) return;
-
-                const botUsername = "Hexon_game_bot";
-                const link = `https://t.me{botUsername}?start=work_${selectedJob}`;
-                
-                tg.openTelegramLink(link);
-                tg.close();
-            });
+            tg.MainButton.onClick(startWorkDirectly);
         }
     </script>
 </body>
