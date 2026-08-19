@@ -52,7 +52,7 @@
             background: none;
             border: none;
             color: var(--text-muted);
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             border-radius: 8px;
@@ -85,11 +85,24 @@
         .btn-blue { background-color: var(--accent-blue); color: #fff; }
         .btn-green { background-color: var(--accent-green); color: #fff; }
         .btn-orange { background-color: var(--accent-orange); color: #fff; pointer-events: none; }
+        
+        /* Стили для реферальной вкладки */
+        .ref-box {
+            background-color: #2c2c2e;
+            border: 1px dashed var(--accent-blue);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin-bottom: 15px;
+            color: #afb2b6;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Шапка балансов синхронизируется с ботом -->
+    <!-- Шапка балансов -->
     <div class="header-balance">
         <div class="balance-item">
             <span>Игровые Рубли</span>
@@ -101,9 +114,11 @@
         </div>
     </div>
 
+    <!-- Трёхвкладочная навигация -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
-        <button class="tab" onclick="switchTab('business-page', this)">🏪 Купить бизнес</button>
+        <button class="tab" onclick="switchTab('business-page', this)">🏪 Бизнес</button>
+        <button class="tab" onclick="switchTab('friends-page', this)">👥 Друзья</button>
     </div>
 
     <!-- Вкладка: Работа -->
@@ -121,7 +136,7 @@
         <div class="card">
             <h3>🚗 Водитель такси</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="startWork('driver', 500)">Начать смену (8ч)</button>
+            <button id="btn-driver" class="action-btn btn-blue" onclick="startWork('driver', 500)">Начать смену (8ч)</button>
         </div>
     </div>
 
@@ -139,6 +154,20 @@
         </div>
     </div>
 
+    <!-- Вкладка: Друзья (НОВАЯ) -->
+    <div id="friends-page" class="page">
+        <div class="card">
+            <h3>🤝 Приглашайте друзей!</h3>
+            <p>Получайте внутриигровые бонусы и развивайте свою RWA-сеть.</p>
+            
+            <p style="margin-bottom: 5px; font-weight: bold;">Ваша реферальная ссылка:</p>
+            <div id="ref-link-text" class="ref-box">Генерация ссылки...</div>
+            
+            <button class="action-btn btn-blue" onclick="inviteFriend()" style="margin-bottom: 10px;">💬 Отправить другу в ТГ</button>
+            <button class="action-btn btn-green" onclick="copyRefLink()">📋 Копировать ссылку</button>
+        </div>
+    </div>
+
     <script>
         var tg = window.Telegram ? window.Telegram.WebApp : null;
         if (tg) {
@@ -146,21 +175,29 @@
             tg.expand();
         }
 
-        // ПАРСИНГ ПАРАМЕТРОВ БАЛАНСА ИЗ ССЫЛКИ БОТА
+        // Парсинг баланса и Telegram ID из ссылки
         const urlParams = new URLSearchParams(window.location.search);
         let paramRub = urlParams.get('rub');
         let paramNexon = urlParams.get('nexon');
+        
+        // Получаем ID пользователя для рефералки (если нет, ставим заглушку)
+        let userId = "000000";
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            userId = tg.initDataUnsafe.user.id;
+        }
 
-        // Если бот успешно передал данные — обновляем локальную память приложения
         if (paramRub !== null) localStorage.setItem('hexon_rub', paramRub);
         if (paramNexon !== null) localStorage.setItem('hexon_nexon', paramNexon);
 
-        // Считываем балансы
         var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
         var balanceNexon = parseFloat(localStorage.getItem('hexon_nexon') || '0');
         updateUI();
 
-        // Запуск проверки таймеров
+        // Формируем реферальную ссылку на нашего бота Hexon_game_bot
+        var botUsername = "Hexon_game_bot";
+        var finalRefLink = "https://t.me" + botUsername + "?start=" + userId;
+        document.getElementById('ref-link-text').innerText = finalRefLink;
+
         setInterval(checkWorkTimer, 1000);
 
         function updateUI() {
@@ -175,9 +212,24 @@
             tabButton.classList.add('active');
         }
 
+        // Функция ТГ-шеринга ссылки
+        function inviteFriend() {
+            if (tg) {
+                var shareUrl = "https://t.meshare/url?url=" + encodeURIComponent(finalRefLink) + "&text=" + encodeURIComponent("🚀 Присоединяйся к Hexon Game, зарабатывай рубли и токены NEXON в реальном времени!");
+                tg.openTelegramLink(shareUrl);
+            }
+        }
+
+        // Функция обычного копирования в буфер обмена
+        function copyRefLink() {
+            navigator.clipboard.writeText(finalRefLink).then(function() {
+                showMsg('📋 Скопировано!', 'Ссылка успешно сохранена в буфер обмена.');
+            });
+        }
+
         function startWork(jobId, salary) {
             var now = Math.floor(Date.now() / 1000);
-            var endWorkTime = now + (8 * 3600); // Таймер на 8 реальных часов
+            var endWorkTime = now + (8 * 3600);
             
             localStorage.setItem('hexon_work_job', jobId);
             localStorage.setItem('hexon_work_end', endWorkTime);
@@ -200,6 +252,7 @@
                 if (activeJob === jId && endWorkTime > now) {
                     var diff = endWorkTime - now;
                     var hours = Math.floor(diff / 3600);
+                    
                     var minutes = Math.floor((diff % 3600) / 60);
                     var seconds = diff % 60;
                     var timeStr = (hours < 10 ? '0' + hours : hours) + ':' +
@@ -209,7 +262,6 @@
                     btn.className = 'action-btn btn-orange';
                     btn.innerText = 'Осталось: ' + timeStr;
                 } else if (activeJob === jId && endWorkTime <= now && endWorkTime !== 0) {
-                    // Таймер окончен — начисляем деньги на баланс приложения
                     var earned = parseFloat(localStorage.getItem('hexon_work_salary') || '500');
                     balanceRub += earned;
                     localStorage.setItem('hexon_rub', balanceRub);
@@ -221,6 +273,9 @@
                     localStorage.removeItem('hexon_work_end');
                     localStorage.removeItem('hexon_work_salary');
 
+                    btn.className = 'action-btn btn-blue';
+                    btn.innerText = 'Начать смену (8ч)';
+                } else if (activeJob !== jId) {
                     btn.className = 'action-btn btn-blue';
                     btn.innerText = 'Начать смену (8ч)';
                 }
