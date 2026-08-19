@@ -11,6 +11,7 @@
             --card-bg: #1c1c1e;
             --accent-blue: #2f80ed;
             --accent-green: #34c759;
+            --accent-orange: #ff9500;
             --text-main: #ffffff;
             --text-muted: #8e8e93;
             --border-color: #3a3a3c;
@@ -83,6 +84,7 @@
         }
         .btn-blue { background-color: var(--accent-blue); color: #fff; }
         .btn-green { background-color: var(--accent-green); color: #fff; }
+        .btn-orange { background-color: var(--accent-orange); color: #fff; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -107,17 +109,17 @@
         <div class="card">
             <h3>👷 Грузчик на склад</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="handleAction('work', 'loader', 500)">Начать смену (8ч)</button>
+            <button id="btn-loader" class="action-btn btn-blue" onclick="startWork('loader', 500)">Начать смену (8ч)</button>
         </div>
         <div class="card">
             <h3>🚴 Курьер доставки</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="handleAction('work', 'courier', 500)">Начать смену (8ч)</button>
+            <button id="btn-courier" class="action-btn btn-blue" onclick="startWork('courier', 500)">Начать смену (8ч)</button>
         </div>
         <div class="card">
             <h3>🚗 Водитель такси</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="handleAction('work', 'driver', 500)">Начать смену (8ч)</button>
+            <button id="btn-driver" class="action-btn btn-blue" onclick="startWork('driver', 500)">Начать смену (8ч)</button>
         </div>
     </div>
 
@@ -125,12 +127,12 @@
         <div class="card">
             <h3>🥖 Городская Пекарня</h3>
             <p>Цена: 5000 руб | Доход: +10 руб/ч</p>
-            <button class="action-btn btn-green" onclick="handleAction('buy', 'bakery', 5000)">Купить Пекарню</button>
+            <button class="action-btn btn-green" onclick="buyBusiness('bakery', 5000)">Купить Пекарню</button>
         </div>
         <div class="card">
             <h3>🏭 Тяжелый Завод</h3>
             <p>Цена: 25000 руб | Доход: +60 руб/ч</p>
-            <button class="action-btn btn-green" onclick="handleAction('buy', 'factory', 25000)">Купить Завод</button>
+            <button class="action-btn btn-green" onclick="buyBusiness('factory', 25000)">Купить Завод</button>
         </div>
     </div>
 
@@ -141,9 +143,11 @@
             tg.expand();
         }
 
-        // Локальное хранилище баланса для мгновенного отклика
         var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '500');
         updateUI();
+
+        // Запускаем проверку таймера каждую секунду
+        setInterval(checkWorkTimer, 1000);
 
         function updateUI() {
             document.getElementById('rub-val').innerText = balanceRub.toFixed(2) + ' ₽';
@@ -156,18 +160,72 @@
             tabButton.classList.add('active');
         }
 
-        function handleAction(type, name, cost) {
-            if (type === 'work') {
-                showMsg('✅ Смена начата!', 'Вы устроились на работу. Таймер запущен.');
-            } else if (type === 'buy') {
-                if (balanceRub >= cost) {
-                    balanceRub -= cost;
+        function startWork(jobId, salary) {
+            var now = Math.floor(Date.now() / 1000);
+            var endWorkTime = now + (8 * 3600); // 8 часов в секундах
+            
+            localStorage.setItem('hexon_work_job', jobId);
+            localStorage.setItem('hexon_work_end', endWorkTime);
+            localStorage.setItem('hexon_work_salary', salary);
+
+            showMsg('✅ Смена начата!', 'Вы устроились на работу. Таймер пошел!');
+            checkWorkTimer();
+        }
+
+        function checkWorkTimer() {
+            var activeJob = localStorage.getItem('hexon_work_job');
+            var endWorkTime = parseInt(localStorage.getItem('hexon_work_end') || '0');
+            var now = Math.floor(Date.now() / 1000);
+
+            var jobs = ['loader', 'courier', 'driver'];
+            
+            jobs.forEach(function(jId) {
+                var btn = document.getElementById('btn-' + jId);
+                if (!btn) return;
+
+                if (activeJob === jId && endWorkTime > now) {
+                    var diff = endWorkTime - now;
+                    var hours = Math.floor(diff / 3600);
+                    var minutes = Math.floor((diff % 3600) / 60);
+                    var seconds = diff % 60;
+
+                    var timeStr = (hours < 10 ? '0' + hours : hours) + ':' +
+                                  (minutes < 10 ? '0' + minutes : minutes) + ':' +
+                                  (seconds < 10 ? '0' + seconds : seconds);
+
+                    btn.className = 'action-btn btn-orange';
+                    btn.innerText = 'Осталось: ' + timeStr;
+                } else if (activeJob === jId && endWorkTime <= now && endWorkTime !== 0) {
+                    // Таймер дошел до конца — выдаем зарплату
+                    var earned = parseFloat(localStorage.getItem('hexon_work_salary') || '500');
+                    balanceRub += earned;
                     localStorage.setItem('hexon_rub', balanceRub);
                     updateUI();
-                    showMsg('🎉 Успешно!', 'Вы приобрели новый бизнес!');
-                } else {
-                    showMsg('❌ Ошибка', 'Недостаточно игровых рублей на балансе.');
+
+                    showMsg('💰 Смена окончена!', 'Вам начислена зарплата: +' + earned + ' ₽');
+
+                    // Сбрасываем смену
+                    localStorage.removeItem('hexon_work_job');
+                    localStorage.removeItem('hexon_work_end');
+                    localStorage.removeItem('hexon_work_salary');
+
+                    btn.className = 'action-btn btn-blue';
+                    btn.innerText = 'Начать смену (8ч)';
+                } else if (activeJob !== jId) {
+                    btn.className = 'action-btn btn-blue';
+                    btn.innerText = 'Начать смену (8ч)';
                 }
+            });
+        }
+
+        function buyBusiness(bId, cost) {
+            if (balanceRub >= cost) {
+                balanceRub -= cost;
+                localStorage.setItem('hexon_rub', balanceRub);
+                updateUI();
+                showMsg('🎉 Успешно!', 'Бизнес куплен!');
+            } else {
+                showMsg('❌ Ошибка', 'Недостаточно игровых рублей на балансе.');
             }
         }
 
