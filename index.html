@@ -141,6 +141,7 @@
             tg.expand();
         }
 
+        // IP вашего сервера Aeza
         var SERVER_IP = "45.80.229.112"; 
 
         function switchTab(pageId, tabButton) {
@@ -151,12 +152,13 @@
         }
 
         function sendActionToServer(actionName, itemId) {
-            // Пытаемся получить реальный ID пользователя из Телеграма, иначе берем админский для тестов
+            // Подстраховка: если ТГ не передал ID игрока, берем ваш ID админа для тестов
             var userId = 8067646739; 
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
                 userId = tg.initDataUnsafe.user.id;
             }
 
+            // Шлем скрытый запрос на сервер напрямую
             fetch("http://" + SERVER_IP + ":8000/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -168,6 +170,7 @@
             })
             .then(function(res) { return res.json(); })
             .then(function(data) {
+                // Вместо ошибок выводим красивое родное окно Telegram прямо в игре!
                 if (tg && tg.showPopup) {
                     tg.showPopup({
                         title: data.status === 'success' ? '✅ Успешно' : '❌ Ошибка',
@@ -182,11 +185,11 @@
                 if (tg && tg.showPopup) {
                     tg.showPopup({
                         title: '⚠️ Ошибка сети',
-                        message: 'Не удалось связаться с сервером (порт 8000). Проверьте фаервол или запуск скрипта.',
+                        message: 'Не удалось связаться с сервером на порту 8000. Убедитесь, что бот запущен.',
                         buttons: [{type: 'ok', text: 'Закрыть'}]
                     });
                 } else {
-                    alert("Ошибка сети: не удалось связаться с бэкендом.");
+                    alert("Ошибка сети: сервер недоступен.");
                 }
             });
         }
