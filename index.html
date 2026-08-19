@@ -87,7 +87,6 @@
 </head>
 <body>
 
-    <!-- Шапка балансов -->
     <div class="header-balance">
         <div class="balance-item">
             <span>Игровые Рубли</span>
@@ -99,13 +98,11 @@
         </div>
     </div>
 
-    <!-- Переключатель вкладок -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Купить бизнес</button>
     </div>
 
-    <!-- Раздел: Работа -->
     <div id="work-page" class="page active">
         <div class="card">
             <h3>👷 Грузчик на склад</h3>
@@ -124,7 +121,6 @@
         </div>
     </div>
 
-    <!-- Раздел: Бизнес -->
     <div id="business-page" class="page">
         <div class="card">
             <h3>🥖 Городская Пекарня</h3>
@@ -145,7 +141,6 @@
             tg.expand();
         }
 
-        // Встроенный IP вашего сервера Aeza
         var SERVER_IP = "45.80.229.112"; 
 
         function switchTab(pageId, tabButton) {
@@ -155,14 +150,12 @@
             tabButton.classList.add('active');
         }
 
-        // Фоновый запрос на бэкенд через API без ошибок редиректа
         function sendActionToServer(actionName, itemId) {
-            if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-                alert("Ошибка: Запустите игру внутри Telegram чата!");
-                return;
+            // Пытаемся получить реальный ID пользователя из Телеграма, иначе берем админский для тестов
+            var userId = 8067646739; 
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+                userId = tg.initDataUnsafe.user.id;
             }
-
-            var userId = tg.initDataUnsafe.user.id;
 
             fetch("http://" + SERVER_IP + ":8000/", {
                 method: "POST",
@@ -175,19 +168,26 @@
             })
             .then(function(res) { return res.json(); })
             .then(function(data) {
-                // Выводим системный поп-ап ТГ прямо на экране игры
-                tg.showPopup({
-                    title: data.status === 'success' ? '✅ Успешно' : '❌ Ошибка',
-                    message: data.message,
-                    buttons: [{type: 'ok', text: 'Понятно'}]
-                });
+                if (tg && tg.showPopup) {
+                    tg.showPopup({
+                        title: data.status === 'success' ? '✅ Успешно' : '❌ Ошибка',
+                        message: data.message,
+                        buttons: [{type: 'ok', text: 'Понятно'}]
+                    });
+                } else {
+                    alert(data.message);
+                }
             })
             .catch(function(err) {
-                tg.showPopup({
-                    title: '⚠️ Ошибка сети',
-                    message: 'Не удалось связаться с сервером. Убедитесь, что python-скрипт запущен.',
-                    buttons: [{type: 'ok', text: 'Закрыть'}]
-                });
+                if (tg && tg.showPopup) {
+                    tg.showPopup({
+                        title: '⚠️ Ошибка сети',
+                        message: 'Не удалось связаться с сервером (порт 8000). Проверьте фаервол или запуск скрипта.',
+                        buttons: [{type: 'ok', text: 'Закрыть'}]
+                    });
+                } else {
+                    alert("Ошибка сети: не удалось связаться с бэкендом.");
+                }
             });
         }
     </script>
