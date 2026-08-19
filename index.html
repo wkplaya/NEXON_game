@@ -59,9 +59,8 @@
             background-color: #1c2e4a;
             box-shadow: 0 0 10px rgba(0, 136, 204, 0.5);
         }
-        /* Встроенная кнопка-дублер на случай, если нативная кнопка ТГ кэшируется */
         .action-button {
-            display: none; /* Изначально скрыта, появится при выборе профессии */
+            display: none;
             background-color: #2f80ed;
             color: white;
             border: none;
@@ -74,6 +73,16 @@
             width: 100%;
             max-width: 400px;
             box-shadow: 0 4px 15px rgba(47, 128, 237, 0.4);
+        }
+        .fallback-text {
+            display: none;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #ff9500;
+        }
+        .fallback-text a {
+            color: #2f80ed;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -97,8 +106,12 @@
         </div>
     </div>
 
-    <!-- Кнопка-дублер прямо на экране сайта -->
     <button id="screen-action-btn" class="action-button" onclick="startWorkDirectly()">НАЧАТЬ СМЕНУ (8 ЧАСОВ)</button>
+    
+    <!-- Текстовый дублер на случай экстра-блокировок в старых версиях ТГ -->
+    <div id="fallback-link" class="fallback-text">
+        Если кнопка не сработала, <a id="direct-url" href="#">нажмите сюда для подтверждения</a>
+    </div>
 
     <script>
         let tg = window.Telegram ? window.Telegram.WebApp : null;
@@ -112,12 +125,10 @@
         let selectedJob = null;
 
         function selectJob(element, jobId) {
-            // Подсвечиваем выбранную карточку визуально
             document.querySelectorAll('.job-card').forEach(card => card.classList.remove('selected'));
             element.classList.add('selected');
             selectedJob = jobId;
 
-            // 1. Пытаемся показать нативную кнопку Telegram снизу экрана
             if (tg && tg.MainButton) {
                 try {
                     tg.MainButton.text = "НАЧАТЬ СМЕНУ (8 ЧАСОВ)";
@@ -127,11 +138,18 @@
                 } catch(e) { console.log(e); }
             }
 
-            // 2. ВСЕГДА показываем кнопку прямо на самом экране (железная страховка от лагов ТГ)
+            // Показываем кнопку на экране и обновляем подстраховочную ссылку
             document.getElementById("screen-action-btn").style.display = "block";
+            
+            const botUsername = "Hexon_game_bot";
+            const link = `https://t.me{botUsername}?start=work_${selectedJob}`;
+            
+            const fallbackDiv = document.getElementById("fallback-link");
+            const directA = document.getElementById("direct-url");
+            directA.href = link;
+            fallbackDiv.style.display = "block";
         }
 
-        // Функция отправки команды, которая сработает от любой из двух кнопок
         function startWorkDirectly() {
             if (!selectedJob) return;
 
@@ -140,18 +158,22 @@
             
             if (tg) {
                 try {
-                    tg.openTelegramLink(link);
-                    tg.close();
+                    // Используем нативный метод ТГ для открытия внешних/внутренних ссылок
+                    tg.openLink(link, {try_instant_view: false});
+                    setTimeout(() => { tg.close(); }, 500);
                 } catch(e) {
-                    // Если SDK совсем упал, делаем жесткий редирект силами браузера
-                    window.location.href = link;
+                    try {
+                        tg.openTelegramLink(link);
+                        tg.close();
+                    } catch(err) {
+                        window.open(link, '_blank');
+                    }
                 }
             } else {
                 window.location.href = link;
             }
         }
 
-        // Привязываем клик к нативной кнопке ТГ (если она оживет)
         if (tg && tg.MainButton) {
             tg.MainButton.onClick(startWorkDirectly);
         }
