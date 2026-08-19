@@ -3,180 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hexon Game</title>
+    <title>Hexon Game Hub</title>
     <script src="https://telegram.org"></script>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #1c1c1e;
             color: #ffffff;
-            text-align: center;
-            padding: 20px;
             margin: 0;
+            padding: 15px;
         }
-        h2 {
-            margin-top: 10px;
-            color: #2f80ed;
-            font-size: 24px;
-        }
-        .description {
-            color: #8e8e93;
-            font-size: 14px;
+        /* Навигация по вкладкам сверху приложения */
+        .tabs {
+            display: flex;
+            background-color: #2c2c2e;
+            border-radius: 10px;
+            padding: 4px;
             margin-bottom: 20px;
         }
-        .job-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-width: 400px;
-            margin: 0 auto;
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: none;
+            border: none;
+            color: #8e8e93;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
         }
-        .job-card {
+        .tab.active {
+            background-color: #2f80ed;
+            color: #ffffff;
+        }
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        .card {
             background-color: #2c2c2e;
             border: 2px solid #3a3a3c;
             border-radius: 14px;
             padding: 16px;
+            margin-bottom: 12px;
             text-align: left;
-            cursor: pointer;
-            transition: all 0.15s ease-in-out;
-            -webkit-tap-highlight-color: transparent;
         }
-        .job-card h3 {
-            margin: 0 0 6px 0;
-            font-size: 18px;
-        }
-        .job-card p {
-            margin: 0;
-            font-size: 14px;
-            color: #34c759;
-            font-weight: bold;
-        }
-        .job-card.selected {
-            border-color: #2f80ed;
-            background-color: #1c2e4a;
-            box-shadow: 0 0 10px rgba(0, 136, 204, 0.5);
-        }
-        .action-button {
-            display: none;
-            background-color: #2f80ed;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 12px;
-            cursor: pointer;
-            margin-top: 25px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 4px 15px rgba(47, 128, 237, 0.4);
-        }
-        .fallback-text {
-            display: none;
-            margin-top: 15px;
-            font-size: 14px;
-            color: #ff9500;
-        }
-        .fallback-text a {
-            color: #2f80ed;
-            text-decoration: underline;
-        }
+        .card.selected { border-color: #2f80ed; background-color: #1c2e4a; }
+        .card h3 { margin: 0 0 6px 0; font-size: 18px; }
+        .card p { margin: 0; font-size: 14px; color: #8e8e93; }
+        .price { color: #34c759 !important; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2>💼 Биржа труда</h2>
-    <p class="description">Выберите доступную вакансию для старта смены:</p>
+    <!-- Вкладки меню -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
+        <button class="tab" onclick="switchTab('business-page', this)">🏪 Бизнес</button>
+    </div>
 
-    <div id="jobs" class="job-list">
-        <div class="job-card" onclick="selectJob(this, 'loader')">
+    <!-- Страница 1: Биржа труда -->
+    <div id="work-page" class="page active">
+        <p style="color: #8e8e93;">Выберите профессию для старта 8-часовой смены:</p>
+        <div class="card" onclick="selectItem(this, 'start_work', 'loader')">
             <h3>👷 Грузчик на склад</h3>
-            <p>Выплата: 500 руб / 8 часов</p>
+            <p>Доход: <span class="price">500 руб</span> / за смену</p>
         </div>
-        <div class="job-card" onclick="selectJob(this, 'courier')">
+        <div class="card" onclick="selectItem(this, 'start_work', 'courier')">
             <h3>🚴 Курьер доставки</h3>
-            <p>Выплата: 500 руб / 8 часов</p>
+            <p>Доход: <span class="price">500 руб</span> / за смену</p>
         </div>
-        <div class="job-card" onclick="selectJob(this, 'driver')">
+        <div class="card" onclick="selectItem(this, 'start_work', 'driver')">
             <h3>🚗 Водитель такси</h3>
-            <p>Выплата: 500 руб / 8 часов</p>
+            <p>Доход: <span class="price">500 руб</span> / за смену</p>
         </div>
     </div>
 
-    <button id="screen-action-btn" class="action-button" onclick="startWorkDirectly()">НАЧАТЬ СМЕНУ (8 ЧАСОВ)</button>
-    
-    <!-- Текстовый дублер на случай экстра-блокировок в старых версиях ТГ -->
-    <div id="fallback-link" class="fallback-text">
-        Если кнопка не сработала, <a id="direct-url" href="#">нажмите сюда для подтверждения</a>
+    <!-- Страница 2: Покупка RWA бизнесов -->
+    <div id="business-page" class="page">
+        <p style="color: #8e8e93;">Покупайте предприятия для генерации пассивного дохода:</p>
+        <div class="card" onclick="selectItem(this, 'buy_business', 'bakery')">
+            <h3>🥖 Городская Пекарня</h3>
+            <p>Стоимость: <span class="price">5000 руб</span></p>
+            <p style="margin-top: 4px; font-size: 12px;">Пассивный доход: +10 руб/час и +0.5 NEXON/час</p>
+        </div>
+        <div class="card" onclick="selectItem(this, 'buy_business', 'factory')">
+            <h3>🏭 Тяжелый Завод</h3>
+            <p>Стоимость: <span class="price">25000 руб</span></p>
+            <p style="margin-top: 4px; font-size: 12px;">Пассивный доход: +60 руб/час и +3.0 NEXON/час</p>
+        </div>
     </div>
 
     <script>
-        let tg = window.Telegram ? window.Telegram.WebApp : null;
-        if (tg) {
-            try {
-                tg.ready();
-                tg.expand();
-            } catch(e) { console.log(e); }
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        let currentAction = null;
+        let currentId = null;
+        const mainButton = tg.MainButton;
+
+        function switchTab(pageId, tabButton) {
+            // Переключаем активную вкладку
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(pageId).classList.add('active');
+            tabButton.classList.add('active');
+            
+            // Сбрасываем выбор при переключении вкладок
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+            mainButton.hide();
         }
 
-        let selectedJob = null;
-
-        function selectJob(element, jobId) {
-            document.querySelectorAll('.job-card').forEach(card => card.classList.remove('selected'));
+        function selectItem(element, action, itemId) {
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
             element.classList.add('selected');
-            selectedJob = jobId;
-
-            if (tg && tg.MainButton) {
-                try {
-                    tg.MainButton.text = "НАЧАТЬ СМЕНУ (8 ЧАСОВ)";
-                    tg.MainButton.color = "#2f80ed";
-                    tg.MainButton.textColor = "#ffffff";
-                    tg.MainButton.show();
-                } catch(e) { console.log(e); }
-            }
-
-            // Показываем кнопку на экране и обновляем подстраховочную ссылку
-            document.getElementById("screen-action-btn").style.display = "block";
             
-            const botUsername = "Hexon_game_bot";
-            const link = `https://t.me{botUsername}?start=work_${selectedJob}`;
-            
-            const fallbackDiv = document.getElementById("fallback-link");
-            const directA = document.getElementById("direct-url");
-            directA.href = link;
-            fallbackDiv.style.display = "block";
-        }
+            currentAction = action;
+            currentId = itemId;
 
-        function startWorkDirectly() {
-            if (!selectedJob) return;
-
-            const botUsername = "Hexon_game_bot";
-            const link = `https://t.me{botUsername}?start=work_${selectedJob}`;
-            
-            if (tg) {
-                try {
-                    // Используем нативный метод ТГ для открытия внешних/внутренних ссылок
-                    tg.openLink(link, {try_instant_view: false});
-                    setTimeout(() => { tg.close(); }, 500);
-                } catch(e) {
-                    try {
-                        tg.openTelegramLink(link);
-                        tg.close();
-                    } catch(err) {
-                        window.open(link, '_blank');
-                    }
-                }
+            // Настраиваем системную кнопку ТГ в зависимости от вкладки
+            if (action === "start_work") {
+                mainButton.text = "ПОДТВЕРДИТЬ СТАРТ СМЕНЫ";
+                mainButton.color = "#2f80ed";
             } else {
-                window.location.href = link;
+                mainButton.text = "КУПИТЬ ПРЕДПРИЯТИЕ";
+                mainButton.color = "#34c759";
             }
+            mainButton.show();
         }
 
-        if (tg && tg.MainButton) {
-            tg.MainButton.onClick(startWorkDirectly);
-        }
+        // Клик по нижней системной кнопке
+        mainButton.onClick(() => {
+            if (!currentAction || !currentId) return;
+
+            let dataToSend = {};
+            if (currentAction === "start_work") {
+                dataToSend = { action: "start_work", job_id: currentId };
+            } else if (currentAction === "buy_business") {
+                dataToSend = { action: "buy_business", business_id: currentId };
+            }
+
+            // Нативный безопасный метод отправки пакета данных в бот
+            tg.sendData(JSON.stringify(dataToSend));
+            tg.close();
+        });
     </script>
 </body>
 </html>
