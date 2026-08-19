@@ -6,20 +6,43 @@
     <title>Hexon Game Hub</title>
     <script src="https://telegram.org"></script>
     <style>
+        /* Настраиваемые цвета темы (легко поменять под себя) */
+        :root {
+            --bg-color: #121214;
+            --card-bg: #1c1c1e;
+            --accent-blue: #2f80ed;
+            --accent-green: #34c759;
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+            --border-color: #2c2c2e;
+        }
         * { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #1c1c1e;
-            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
-            padding: 15px;
+            padding: 16px;
         }
+        .header-balance {
+            background: linear-gradient(135deg, #2c2c2e, #1c1c1e);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        .balance-item span { display: block; font-size: 12px; color: var(--text-muted); }
+        .balance-item strong { font-size: 16px; color: var(--accent-green); }
+        
         .tabs {
             display: flex;
-            background-color: #2c2c2e;
+            background-color: var(--card-bg);
             border-radius: 10px;
             padding: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .tab {
             flex: 1;
@@ -27,70 +50,94 @@
             text-align: center;
             background: none;
             border: none;
-            color: #8e8e93;
-            font-size: 16px;
+            color: var(--text-muted);
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
             border-radius: 8px;
         }
-        .tab.active {
-            background-color: #2f80ed;
-            color: #ffffff;
-        }
+        .tab.active { background-color: var(--accent-blue); color: var(--text-main); }
         .page { display: none; }
         .page.active { display: block; }
-        
+
         .card {
-            background-color: #2c2c2e;
-            border: 2px solid #3a3a3c;
-            border-radius: 14px;
-            padding: 16px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
             margin-bottom: 12px;
-            text-align: left;
+        }
+        .card h3 { margin: 0 0 4px 0; font-size: 16px; }
+        .card p { margin: 0 0 10px 0; font-size: 13px; color: var(--text-muted); }
+        
+        .action-btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
             cursor: pointer;
         }
-        .card.selected { border-color: #2f80ed; background-color: #1c2e4a; }
-        .card h3 { margin: 0 0 6px 0; font-size: 18px; }
-        .card p { margin: 0; font-size: 14px; color: #8e8e93; }
-        .price { color: #34c759 !important; font-weight: bold; }
+        .btn-blue { background-color: var(--accent-blue); color: #fff; }
+        .btn-green { background-color: var(--accent-green); color: #fff; }
+        .btn-disabled { background-color: #3a3a3c; color: var(--text-muted); cursor: not-allowed; }
+        
+        .timer-box { color: #ff9f0a; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
     </style>
 </head>
 <body>
 
+    <!-- Шапка с балансом -->
+    <div class="header-balance">
+        <div class="balance-item">
+            <span>Рубли</span>
+            <strong id="rub-val">0.00 ₽</strong>
+        </div>
+        <div class="balance-item">
+            <span>NEXON</span>
+            <strong id="nexon-val" style="color: #00c7be;">0.0000</strong>
+        </div>
+    </div>
+
+    <!-- Вкладки -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
-        <button class="tab" onclick="switchTab('business-page', this)">🏪 Бизнес</button>
+        <button class="tab" onclick="switchTab('business-page', this)">🏪 Купить бизнес</button>
     </div>
 
-    <!-- Биржа труда -->
+    <!-- Страница 1: Работа с кнопками и отсчетом -->
     <div id="work-page" class="page active">
-        <p style="color: #8e8e93;">Выберите профессию для старта 8-часовой смены:</p>
-        <div class="card" onclick="selectItem(this, 'work', 'loader')">
+        <div id="work-status-container" class="timer-box" style="display:none;"></div>
+        
+        <div class="card">
             <h3>👷 Грузчик на склад</h3>
-            <p>Доход: <span class="price">500 руб</span> / за смену</p>
+            <p>Зарплата: 500 руб / 8 часов</p>
+            <button id="btn-work-loader" class="action-btn btn-blue" onclick="triggerAction('work', 'loader')">Начать смену (8ч)</button>
         </div>
-        <div class="card" onclick="selectItem(this, 'work', 'courier')">
+        <div class="card">
             <h3>🚴 Курьер доставки</h3>
-            <p>Доход: <span class="price">500 руб</span> / за смену</p>
+            <p>Зарплата: 500 руб / 8 часов</p>
+            <button id="btn-work-courier" class="action-btn btn-blue" onclick="triggerAction('work', 'courier')">Начать смену (8ч)</button>
         </div>
-        <div class="card" onclick="selectItem(this, 'work', 'driver')">
+        <div class="card">
             <h3>🚗 Водитель такси</h3>
-            <p>Доход: <span class="price">500 руб</span> / за смену</p>
+            <p>Зарплата: 500 руб / 8 часов</p>
+            <button id="btn-work-driver" class="action-btn btn-blue" onclick="triggerAction('work', 'driver')">Начать смену (8ч)</button>
         </div>
     </div>
 
-    <!-- Покупка бизнесов -->
+    <!-- Страница 2: Покупка бизнеса с кнопками -->
     <div id="business-page" class="page">
-        <p style="color: #8e8e93;">Покупайте предприятия для генерации пассивного дохода:</p>
-        <div class="card" onclick="selectItem(this, 'buy', 'bakery')">
+        <div class="card">
             <h3>🥖 Городская Пекарня</h3>
-            <p>Стоимость: <span class="price">5000 руб</span></p>
-            <p style="margin-top: 4px; font-size: 12px;">Пассив: +10 руб/час и +0.5 NEXON/час</p>
+            <p>Цена: 5000 руб | Доход: +10 руб/ч</p>
+            <button class="action-btn btn-green" onclick="triggerAction('buy', 'bakery')">Купить Пекарню</button>
         </div>
-        <div class="card" onclick="selectItem(this, 'buy', 'factory')">
+        <div class="card">
             <h3>🏭 Тяжелый Завод</h3>
-            <p>Стоимость: <span class="price">25000 руб</span></p>
-            <p style="margin-top: 4px; font-size: 12px;">Пассив: +60 руб/час и +3.0 NEXON/час</p>
+            <p>Цена: 25000 руб | Доход: +60 руб/ч</p>
+            <button class="action-btn btn-green" onclick="triggerAction('buy', 'factory')">Купить Завод</button>
         </div>
     </div>
 
@@ -99,50 +146,28 @@
         tg.expand();
         tg.ready();
 
-        let currentAction = null;
-        let currentId = null;
-        const mainButton = tg.MainButton;
-
         function switchTab(pageId, tabButton) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             tabButton.classList.add('active');
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
-            mainButton.hide();
         }
 
-        function selectItem(element, action, itemId) {
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
-            element.classList.add('selected');
-            
-            currentAction = action;
-            currentId = itemId;
-
-            if (action === "work") {
-                mainButton.text = "ПОДТВЕРДИТЬ СТАРТ СМЕНЫ";
-                mainButton.color = "#2f80ed";
-            } else {
-                mainButton.text = "КУПИТЬ ПРЕДПРИЯТИЕ";
-                mainButton.color = "#34c759";
-            }
-            mainButton.show();
-        }
-
-        mainButton.onClick(() => {
-            if (!currentAction || !currentId) return;
-
+        function triggerAction(action, itemId) {
             const botUsername = "Hexon_game_bot";
-            // Формируем чистый, одобренный политикой безопасности Telegram диплинк
-            const deepLink = `https://t.me{botUsername}?start=${currentAction}_${currentId}`;
-            
+            const deepLink = `https://t.me{botUsername}?start=${action}_${itemId}`;
             try {
                 tg.openTelegramLink(deepLink);
                 tg.close();
             } catch(e) {
                 window.location.href = deepLink;
             }
-        });
+        }
+
+        // Пример подгрузки из initData / заглушка отображения
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            // Здесь в будущем можно завязать запрос к вашему python api
+        }
     </script>
 </body>
 </html>
