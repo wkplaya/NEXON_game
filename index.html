@@ -87,50 +87,54 @@
 </head>
 <body>
 
+    <!-- Шапка баланса -->
     <div class="header-balance">
         <div class="balance-item">
             <span>Игровые Рубли</span>
-            <strong id="rub-val">0.00 ₽</strong>
+            <strong id="rub-val">В чате бота</strong>
         </div>
         <div class="balance-item">
             <span>Токены NEXON</span>
-            <strong id="nexon-val" style="color: #00c7be;">0.0000</strong>
+            <strong id="nexon-val" style="color: #00c7be;">В чате бота</strong>
         </div>
     </div>
 
+    <!-- Навигация -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Купить бизнес</button>
     </div>
 
+    <!-- Вкладка: Работа -->
     <div id="work-page" class="page active">
         <div class="card">
             <h3>👷 Грузчик на склад</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="sendActionToServer('work', 'loader')">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="triggerNativeAction('work', 'loader')">Начать смену (8ч)</button>
         </div>
         <div class="card">
             <h3>🚴 Курьер доставки</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="sendActionToServer('work', 'courier')">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="triggerNativeAction('work', 'courier')">Начать смену (8ч)</button>
         </div>
         <div class="card">
             <h3>🚗 Водитель такси</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="sendActionToServer('work', 'driver')">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="triggerNativeAction('work', 'driver')">Начать смену (8ч)</button>
         </div>
     </div>
 
+    <!-- Вкладка: Бизнес -->
     <div id="business-page" class="page">
         <div class="card">
             <h3>🥖 Городская Пекарня</h3>
             <p>Цена: 5000 руб | Доход: +10 руб/ч</p>
-            <button class="action-btn btn-green" onclick="sendActionToServer('buy', 'bakery')">Купить Пекарню</button>
+            <button class="action-btn btn-green" onclick="triggerNativeAction('buy', 'bakery')">Купить Пекарню</button>
         </div>
         <div class="card">
             <h3>🏭 Тяжелый Завод</h3>
             <p>Цена: 25000 руб | Доход: +60 руб/ч</p>
-            <button class="action-btn btn-green" onclick="sendActionToServer('buy', 'factory')">Купить Завод</button>
+            <button class="action-btn btn-green" onclick="triggerNativeAction('buy', 'factory')">Купить Завод</button>
         </div>
     </div>
 
@@ -141,9 +145,6 @@
             tg.expand();
         }
 
-        // IP вашего сервера Aeza
-        var SERVER_IP = "45.80.229.112"; 
-
         function switchTab(pageId, tabButton) {
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
             document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
@@ -151,47 +152,22 @@
             tabButton.classList.add('active');
         }
 
-        function sendActionToServer(actionName, itemId) {
-            // Подстраховка: если ТГ не передал ID игрока, берем ваш ID админа для тестов
-            var userId = 8067646739; 
-            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
-                userId = tg.initDataUnsafe.user.id;
+        // НАДЁЖНЫЙ МЕТОД: Системный вызов одобренного Telegram механизма внутренних ссылок
+        function triggerNativeAction(actionName, itemId) {
+            var botUsername = "Hexon_game_bot";
+            var deepLink = "https://t.me" + botUsername + "?start=" + actionName + "_" + itemId;
+            
+            if (tg) {
+                try {
+                    // Telegram нативно перенаправляет в чат к боту и передает параметры работы/покупки
+                    tg.openTelegramLink(deepLink);
+                    tg.close();
+                } catch(e) {
+                    window.location.href = deepLink;
+                }
+            } else {
+                window.location.href = deepLink;
             }
-
-            // Шлем скрытый запрос на сервер напрямую
-            fetch("http://" + SERVER_IP + ":8000/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    user_id: userId,
-                    action: actionName,
-                    item_id: itemId
-                })
-            })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                // Вместо ошибок выводим красивое родное окно Telegram прямо в игре!
-                if (tg && tg.showPopup) {
-                    tg.showPopup({
-                        title: data.status === 'success' ? '✅ Успешно' : '❌ Ошибка',
-                        message: data.message,
-                        buttons: [{type: 'ok', text: 'Понятно'}]
-                    });
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(function(err) {
-                if (tg && tg.showPopup) {
-                    tg.showPopup({
-                        title: '⚠️ Ошибка сети',
-                        message: 'Не удалось связаться с сервером на порту 8000. Убедитесь, что бот запущен.',
-                        buttons: [{type: 'ok', text: 'Закрыть'}]
-                    });
-                } else {
-                    alert("Ошибка сети: сервер недоступен.");
-                }
-            });
         }
     </script>
 </body>
