@@ -14,7 +14,6 @@
             margin: 0;
             padding: 15px;
         }
-        /* Навигация по вкладкам сверху приложения */
         .tabs {
             display: flex;
             background-color: #2c2c2e;
@@ -48,6 +47,7 @@
             padding: 16px;
             margin-bottom: 12px;
             text-align: left;
+            cursor: pointer;
         }
         .card.selected { border-color: #2f80ed; background-color: #1c2e4a; }
         .card h3 { margin: 0 0 6px 0; font-size: 18px; }
@@ -57,41 +57,40 @@
 </head>
 <body>
 
-    <!-- Вкладки меню -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Бизнес</button>
     </div>
 
-    <!-- Страница 1: Биржа труда -->
+    <!-- Биржа труда -->
     <div id="work-page" class="page active">
         <p style="color: #8e8e93;">Выберите профессию для старта 8-часовой смены:</p>
-        <div class="card" onclick="selectItem(this, 'start_work', 'loader')">
+        <div class="card" onclick="selectItem(this, 'work', 'loader')">
             <h3>👷 Грузчик на склад</h3>
             <p>Доход: <span class="price">500 руб</span> / за смену</p>
         </div>
-        <div class="card" onclick="selectItem(this, 'start_work', 'courier')">
+        <div class="card" onclick="selectItem(this, 'work', 'courier')">
             <h3>🚴 Курьер доставки</h3>
             <p>Доход: <span class="price">500 руб</span> / за смену</p>
         </div>
-        <div class="card" onclick="selectItem(this, 'start_work', 'driver')">
+        <div class="card" onclick="selectItem(this, 'work', 'driver')">
             <h3>🚗 Водитель такси</h3>
             <p>Доход: <span class="price">500 руб</span> / за смену</p>
         </div>
     </div>
 
-    <!-- Страница 2: Покупка RWA бизнесов -->
+    <!-- Покупка бизнесов -->
     <div id="business-page" class="page">
         <p style="color: #8e8e93;">Покупайте предприятия для генерации пассивного дохода:</p>
-        <div class="card" onclick="selectItem(this, 'buy_business', 'bakery')">
+        <div class="card" onclick="selectItem(this, 'buy', 'bakery')">
             <h3>🥖 Городская Пекарня</h3>
             <p>Стоимость: <span class="price">5000 руб</span></p>
-            <p style="margin-top: 4px; font-size: 12px;">Пассивный доход: +10 руб/час и +0.5 NEXON/час</p>
+            <p style="margin-top: 4px; font-size: 12px;">Пассив: +10 руб/час и +0.5 NEXON/час</p>
         </div>
-        <div class="card" onclick="selectItem(this, 'buy_business', 'factory')">
+        <div class="card" onclick="selectItem(this, 'buy', 'factory')">
             <h3>🏭 Тяжелый Завод</h3>
             <p>Стоимость: <span class="price">25000 руб</span></p>
-            <p style="margin-top: 4px; font-size: 12px;">Пассивный доход: +60 руб/час и +3.0 NEXON/час</p>
+            <p style="margin-top: 4px; font-size: 12px;">Пассив: +60 руб/час и +3.0 NEXON/час</p>
         </div>
     </div>
 
@@ -105,14 +104,10 @@
         const mainButton = tg.MainButton;
 
         function switchTab(pageId, tabButton) {
-            // Переключаем активную вкладку
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            
             document.getElementById(pageId).classList.add('active');
             tabButton.classList.add('active');
-            
-            // Сбрасываем выбор при переключении вкладок
             document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
             mainButton.hide();
         }
@@ -124,8 +119,7 @@
             currentAction = action;
             currentId = itemId;
 
-            // Настраиваем системную кнопку ТГ в зависимости от вкладки
-            if (action === "start_work") {
+            if (action === "work") {
                 mainButton.text = "ПОДТВЕРДИТЬ СТАРТ СМЕНЫ";
                 mainButton.color = "#2f80ed";
             } else {
@@ -135,20 +129,19 @@
             mainButton.show();
         }
 
-        // Клик по нижней системной кнопке
         mainButton.onClick(() => {
             if (!currentAction || !currentId) return;
 
-            let dataToSend = {};
-            if (currentAction === "start_work") {
-                dataToSend = { action: "start_work", job_id: currentId };
-            } else if (currentAction === "buy_business") {
-                dataToSend = { action: "buy_business", business_id: currentId };
+            const botUsername = "Hexon_game_bot";
+            // Формируем чистый, одобренный политикой безопасности Telegram диплинк
+            const deepLink = `https://t.me{botUsername}?start=${currentAction}_${currentId}`;
+            
+            try {
+                tg.openTelegramLink(deepLink);
+                tg.close();
+            } catch(e) {
+                window.location.href = deepLink;
             }
-
-            // Нативный безопасный метод отправки пакета данных в бот
-            tg.sendData(JSON.stringify(dataToSend));
-            tg.close();
         });
     </script>
 </body>
