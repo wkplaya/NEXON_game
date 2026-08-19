@@ -74,6 +74,7 @@
 </head>
 <body>
 
+    <!-- Переключатель вкладок -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Купить бизнес</button>
@@ -113,29 +114,38 @@
     </div>
 
     <script>
+        // Инициализация Telegram SDK
         var tg = window.Telegram ? window.Telegram.WebApp : null;
         if (tg) {
             tg.ready();
             tg.expand();
         }
 
+        // Переключение страниц
         function switchTab(pageId, tabButton) {
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
             document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+            
             document.getElementById(pageId).classList.add('active');
             tabButton.classList.add('active');
         }
 
-        // НАДЁЖНЫЙ ОФИЦИАЛЬНЫЙ МЕТОД ДЛЯ КНОПОК РАБОТЫ И БИЗНЕСА
+        // НАДЁЖНЫЙ ПЕРЕХОД: Прямой вызов одобренного Telegram механизма ссылок
         function triggerAction(actionName, itemId) {
+            var botUsername = "Hexon_game_bot";
+            // Строим одобренную Telegram внутреннюю ссылку-команду
+            var deepLink = "https://t.me" + botUsername + "?start=" + actionName + "_" + itemId;
+            
             if (tg) {
-                var payload = {
-                    action: actionName,
-                    item_id: itemId
-                };
-                // Отправляем JSON строку боту через легальный шлюз клавиатуры
-                tg.sendData(JSON.stringify(payload));
-                tg.close();
+                try {
+                    // Системный метод открытия внутренних чатов в Telegram
+                    tg.openTelegramLink(deepLink);
+                    tg.close();
+                } catch(e) {
+                    window.location.href = deepLink;
+                }
+            } else {
+                window.location.href = deepLink;
             }
         }
     </script>
