@@ -23,19 +23,6 @@
             margin: 0;
             padding: 16px;
         }
-        .header-balance {
-            background: linear-gradient(135deg, #2c2c2e, #1c1c1e);
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            text-align: center;
-        }
-        .balance-item span { display: block; font-size: 12px; color: var(--text-muted); }
-        .balance-item strong { font-size: 16px; color: var(--accent-green); }
-        
         .tabs {
             display: flex;
             background-color: var(--card-bg);
@@ -87,19 +74,6 @@
 </head>
 <body>
 
-    <!-- Шапка балансов -->
-    <div class="header-balance">
-        <div class="balance-item">
-            <span>Рубли</span>
-            <strong id="rub-val">0.00 ₽</strong>
-        </div>
-        <div class="balance-item">
-            <span>NEXON</span>
-            <strong id="nexon-val" style="color: #00c7be;">0.0000</strong>
-        </div>
-    </div>
-
-    <!-- Переключатель вкладок -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Купить бизнес</button>
@@ -139,37 +113,29 @@
     </div>
 
     <script>
-        // Системная инициализация Telegram SDK
         var tg = window.Telegram ? window.Telegram.WebApp : null;
         if (tg) {
             tg.ready();
             tg.expand();
         }
 
-        // Функция переключения вкладок
         function switchTab(pageId, tabButton) {
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
             document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-            
             document.getElementById(pageId).classList.add('active');
             tabButton.classList.add('active');
         }
 
-        // Функция отправки команды боту
-        function triggerAction(action, itemId) {
-            var botUsername = "Hexon_game_bot";
-            var deepLink = "https://t.me" + botUsername + "?start=" + action + "_" + itemId;
-            
+        // НАДЁЖНЫЙ ОФИЦИАЛЬНЫЙ МЕТОД ДЛЯ КНОПОК РАБОТЫ И БИЗНЕСА
+        function triggerAction(actionName, itemId) {
             if (tg) {
-                try {
-                    // Используем чистый нативный метод Telegram WebApp SDK
-                    tg.openTelegramLink(deepLink);
-                    tg.close();
-                } catch(e) {
-                    window.location.href = deepLink;
-                }
-            } else {
-                window.location.href = deepLink;
+                var payload = {
+                    action: actionName,
+                    item_id: itemId
+                };
+                // Отправляем JSON строку боту через легальный шлюз клавиатуры
+                tg.sendData(JSON.stringify(payload));
+                tg.close();
             }
         }
     </script>
