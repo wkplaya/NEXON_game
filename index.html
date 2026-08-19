@@ -87,15 +87,15 @@
 </head>
 <body>
 
-    <!-- Шапка балансов (ВЕРНУЛИ НА МЕСТО) -->
+    <!-- Шапка балансов -->
     <div class="header-balance">
         <div class="balance-item">
             <span>Игровые Рубли</span>
-            <strong id="rub-val">Loading...</strong>
+            <strong id="rub-val">0.00 ₽</strong>
         </div>
         <div class="balance-item">
             <span>Токены NEXON</span>
-            <strong id="nexon-val" style="color: #00c7be;">Loading...</strong>
+            <strong id="nexon-val" style="color: #00c7be;">0.0000</strong>
         </div>
     </div>
 
@@ -105,54 +105,48 @@
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Купить бизнес</button>
     </div>
 
-    <!-- Вкладка: Работа -->
+    <!-- Раздел: Работа -->
     <div id="work-page" class="page active">
         <div class="card">
             <h3>👷 Грузчик на склад</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="runAction('work', 'loader')">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="sendActionToServer('work', 'loader')">Начать смену (8ч)</button>
         </div>
         <div class="card">
             <h3>🚴 Курьер доставки</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="runAction('work', 'courier')">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="sendActionToServer('work', 'courier')">Начать смену (8ч)</button>
         </div>
         <div class="card">
             <h3>🚗 Водитель такси</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button class="action-btn btn-blue" onclick="runAction('work', 'driver')">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="sendActionToServer('work', 'driver')">Начать смену (8ч)</button>
         </div>
     </div>
 
-    <!-- Вкладка: Бизнес -->
+    <!-- Раздел: Бизнес -->
     <div id="business-page" class="page">
         <div class="card">
             <h3>🥖 Городская Пекарня</h3>
             <p>Цена: 5000 руб | Доход: +10 руб/ч</p>
-            <button class="action-btn btn-green" onclick="runAction('buy', 'bakery')">Купить Пекарню</button>
+            <button class="action-btn btn-green" onclick="sendActionToServer('buy', 'bakery')">Купить Пекарню</button>
         </div>
         <div class="card">
             <h3>🏭 Тяжелый Завод</h3>
             <p>Цена: 25000 руб | Доход: +60 руб/ч</p>
-            <button class="action-btn btn-green" onclick="runAction('buy', 'factory')">Купить Завод</button>
+            <button class="action-btn btn-green" onclick="sendActionToServer('buy', 'factory')">Купить Завод</button>
         </div>
     </div>
 
     <script>
         var tg = window.Telegram ? window.Telegram.WebApp : null;
-        
-        // Переменные симуляции баланса для MVP (чтобы балансы горели на экране сразу)
-        var currentRub = 0;
-        var currentNexon = 0.0000;
-
         if (tg) {
             tg.ready();
             tg.expand();
-            
-            // Загружаем данные пользователя из Telegram (или ставим заглушку)
-            document.getElementById('rub-val').innerText = currentRub.toFixed(2) + " ₽";
-            document.getElementById('nexon-val').innerText = currentNexon.toFixed(4);
         }
+
+        // Встроенный IP вашего сервера Aeza
+        var SERVER_IP = "45.80.229.112"; 
 
         function switchTab(pageId, tabButton) {
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
@@ -161,45 +155,40 @@
             tabButton.classList.add('active');
         }
 
-        // НАСТОЯЩИЙ АВТОНОМНЫЙ WEB3 МЕТОД (БЕЗ РЕДИРЕКТОВ И ОШИБОК)
-        function runAction(actionType, itemId) {
-            if (!tg) return;
-
-            if (actionType === 'work') {
-                // Показываем красивое нативное окно Telegram вместо перезагрузки страницы
-                tg.showPopup({
-                    title: '💼 Трудоустройство',
-                    message: 'Вы успешно начали 8-часовую смену! Таймер запущен в базе данных. Деньги будут начислены автоматически.',
-                    buttons: [{id: 'ok', type: 'default', text: 'Отлично'}]
-                });
-                
-                // Передаем действие боту в фоне, если игра будет закрыта вручную
-                var botUsername = "Hexon_game_bot";
-                var deepLink = "https://t.me" + botUsername + "?start=work_" + itemId;
-                
-                // Пробуем закрыть через sendData, если открыто из клавиатуры, иначе просто оставляем в приложении
-                try {
-                    tg.sendData(JSON.stringify({action: actionType, item_id: itemId}));
-                } catch(e) {
-                    // Подстраховка: шлем сигнал через скрытый клик
-                    console.log("Фоновое сохранение действия");
-                }
-
-            } else if (actionType === 'buy') {
-                // Логика покупки бизнеса внутри Mini App
-                var prices = { 'bakery': 5000, 'factory': 25000 };
-                var names = { 'bakery': 'Городская Пекарня', 'factory': 'Тяжелый Завод' };
-                
-                tg.showPopup({
-                    title: '🏪 Покупка RWA-Франшизы',
-                    message: 'Запрос на покупку бизнеса "' + names[itemId] + '" отправлен боту. Проверьте списание баланса в чате!',
-                    buttons: [{id: 'ok', type: 'default', text: 'Понятно'}]
-                });
-                
-                try {
-                    tg.sendData(JSON.stringify({action: actionType, item_id: itemId}));
-                } catch(e) {}
+        // Фоновый запрос на бэкенд через API без ошибок редиректа
+        function sendActionToServer(actionName, itemId) {
+            if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+                alert("Ошибка: Запустите игру внутри Telegram чата!");
+                return;
             }
+
+            var userId = tg.initDataUnsafe.user.id;
+
+            fetch("http://" + SERVER_IP + ":8000/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: userId,
+                    action: actionName,
+                    item_id: itemId
+                })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                // Выводим системный поп-ап ТГ прямо на экране игры
+                tg.showPopup({
+                    title: data.status === 'success' ? '✅ Успешно' : '❌ Ошибка',
+                    message: data.message,
+                    buttons: [{type: 'ok', text: 'Понятно'}]
+                });
+            })
+            .catch(function(err) {
+                tg.showPopup({
+                    title: '⚠️ Ошибка сети',
+                    message: 'Не удалось связаться с сервером. Убедитесь, что python-скрипт запущен.',
+                    buttons: [{type: 'ok', text: 'Закрыть'}]
+                });
+            });
         }
     </script>
 </body>
