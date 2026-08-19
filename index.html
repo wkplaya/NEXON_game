@@ -89,10 +89,11 @@
 </head>
 <body>
 
+    <!-- Шапка балансов синхронизируется с ботом -->
     <div class="header-balance">
         <div class="balance-item">
             <span>Игровые Рубли</span>
-            <strong id="rub-val">500.00 ₽</strong>
+            <strong id="rub-val">0.00 ₽</strong>
         </div>
         <div class="balance-item">
             <span>Токены NEXON</span>
@@ -105,6 +106,7 @@
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Купить бизнес</button>
     </div>
 
+    <!-- Вкладка: Работа -->
     <div id="work-page" class="page active">
         <div class="card">
             <h3>👷 Грузчик на склад</h3>
@@ -119,10 +121,11 @@
         <div class="card">
             <h3>🚗 Водитель такси</h3>
             <p>Зарплата: 500 руб / 8 часов</p>
-            <button id="btn-driver" class="action-btn btn-blue" onclick="startWork('driver', 500)">Начать смену (8ч)</button>
+            <button class="action-btn btn-blue" onclick="startWork('driver', 500)">Начать смену (8ч)</button>
         </div>
     </div>
 
+    <!-- Вкладка: Бизнес -->
     <div id="business-page" class="page">
         <div class="card">
             <h3>🥖 Городская Пекарня</h3>
@@ -143,14 +146,26 @@
             tg.expand();
         }
 
-        var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '500');
+        // ПАРСИНГ ПАРАМЕТРОВ БАЛАНСА ИЗ ССЫЛКИ БОТА
+        const urlParams = new URLSearchParams(window.location.search);
+        let paramRub = urlParams.get('rub');
+        let paramNexon = urlParams.get('nexon');
+
+        // Если бот успешно передал данные — обновляем локальную память приложения
+        if (paramRub !== null) localStorage.setItem('hexon_rub', paramRub);
+        if (paramNexon !== null) localStorage.setItem('hexon_nexon', paramNexon);
+
+        // Считываем балансы
+        var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
+        var balanceNexon = parseFloat(localStorage.getItem('hexon_nexon') || '0');
         updateUI();
 
-        // Запускаем проверку таймера каждую секунду
+        // Запуск проверки таймеров
         setInterval(checkWorkTimer, 1000);
 
         function updateUI() {
             document.getElementById('rub-val').innerText = balanceRub.toFixed(2) + ' ₽';
+            document.getElementById('nexon-val').innerText = balanceNexon.toFixed(4);
         }
 
         function switchTab(pageId, tabButton) {
@@ -162,13 +177,13 @@
 
         function startWork(jobId, salary) {
             var now = Math.floor(Date.now() / 1000);
-            var endWorkTime = now + (8 * 3600); // 8 часов в секундах
+            var endWorkTime = now + (8 * 3600); // Таймер на 8 реальных часов
             
             localStorage.setItem('hexon_work_job', jobId);
             localStorage.setItem('hexon_work_end', endWorkTime);
             localStorage.setItem('hexon_work_salary', salary);
 
-            showMsg('✅ Смена начата!', 'Вы устроились на работу. Таймер пошел!');
+            showMsg('✅ Смена начата!', 'Вы успешно устроились на работу. Таймер запущен.');
             checkWorkTimer();
         }
 
@@ -176,7 +191,6 @@
             var activeJob = localStorage.getItem('hexon_work_job');
             var endWorkTime = parseInt(localStorage.getItem('hexon_work_end') || '0');
             var now = Math.floor(Date.now() / 1000);
-
             var jobs = ['loader', 'courier', 'driver'];
             
             jobs.forEach(function(jId) {
@@ -188,7 +202,6 @@
                     var hours = Math.floor(diff / 3600);
                     var minutes = Math.floor((diff % 3600) / 60);
                     var seconds = diff % 60;
-
                     var timeStr = (hours < 10 ? '0' + hours : hours) + ':' +
                                   (minutes < 10 ? '0' + minutes : minutes) + ':' +
                                   (seconds < 10 ? '0' + seconds : seconds);
@@ -196,7 +209,7 @@
                     btn.className = 'action-btn btn-orange';
                     btn.innerText = 'Осталось: ' + timeStr;
                 } else if (activeJob === jId && endWorkTime <= now && endWorkTime !== 0) {
-                    // Таймер дошел до конца — выдаем зарплату
+                    // Таймер окончен — начисляем деньги на баланс приложения
                     var earned = parseFloat(localStorage.getItem('hexon_work_salary') || '500');
                     balanceRub += earned;
                     localStorage.setItem('hexon_rub', balanceRub);
@@ -204,14 +217,10 @@
 
                     showMsg('💰 Смена окончена!', 'Вам начислена зарплата: +' + earned + ' ₽');
 
-                    // Сбрасываем смену
                     localStorage.removeItem('hexon_work_job');
                     localStorage.removeItem('hexon_work_end');
                     localStorage.removeItem('hexon_work_salary');
 
-                    btn.className = 'action-btn btn-blue';
-                    btn.innerText = 'Начать смену (8ч)';
-                } else if (activeJob !== jId) {
                     btn.className = 'action-btn btn-blue';
                     btn.innerText = 'Начать смену (8ч)';
                 }
@@ -223,9 +232,9 @@
                 balanceRub -= cost;
                 localStorage.setItem('hexon_rub', balanceRub);
                 updateUI();
-                showMsg('🎉 Успешно!', 'Бизнес куплен!');
+                showMsg('🎉 Успешно!', 'RWA-бизнес успешно приобретен!');
             } else {
-                showMsg('❌ Ошибка', 'Недостаточно игровых рублей на балансе.');
+                showMsg('❌ Ошибка', 'Недостаточно рублей на балансе Mini App.');
             }
         }
 
