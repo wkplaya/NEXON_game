@@ -401,17 +401,31 @@
         }
     </script>
 
-    <!-- НОВЫЙ ИСПРАВЛЕННЫЙ СКРИПТ ПОД ВАШИ КНОПКИ -->
+        <!-- ОБНОВЛЕННЫЙ ИСПРАВЛЕННЫЙ СКРИПТ (ЗАЩИТА ОТ ПУСТЫХ ССЫЛОК) -->
     <script>
         function requestServerUpgrade(businessType) {
-            var deepLink = 'https://t.me_' + businessType;
-            if (window.Telegram && window.Telegram.WebApp) {
+            // Если вдруг тип бизнеса не передался, принудительно берем его из кнопок
+            if (!businessType) {
+                console.error("Ошибка: тип бизнеса не указан");
+                alert("Ошибка клика. Пожалуйста, перезапустите игру.");
+                return;
+            }
+
+            // Собираем ссылку строго на вашего бота Hexon_game_bot
+            var botName = "Hexon_game_bot";
+            var deepLink = 'https://t.me/' + botName + '?start=buy_' + businessType;
+            
+            // Проверяем наличие Telegram WebApp контекста
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
+                // Нативно открываем ссылку в Telegram
                 window.Telegram.WebApp.openTelegramLink(deepLink);
             } else {
-                alert("Запустите игру через Telegram! Ссылка: " + deepLink);
+                // Если открыли в обычном браузере, показываем правильную ссылку для проверки
+                alert("Запустите игру через Telegram! Ссылка на вашего бота:\n" + deepLink);
             }
         }
     </script>
+
 </body>
 </html>
 </body>
