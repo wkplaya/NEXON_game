@@ -391,6 +391,30 @@
             });
         }
     </script>
+    <script>
+    // Этот код принудительно создаёт рабочую функцию для кнопок покупки бизнеса
+    function upgradeBusiness(businessType) {
+        var deepLink = 'https://t.me_' + businessType;
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.openTelegramLink(deepLink);
+        } else {
+            alert("Запустите игру через бота @Hexon_game_bot. Ссылка: " + deepLink);
+        }
+    }
+
+    // Автоматическая привязка кликов к вашим кнопкам (чтобы не искать их в верстке)
+    document.addEventListener("DOMContentLoaded", function() {
+        var btnBakery = document.getElementById('btn-upgrade-bakery');
+        var btnFactory = document.getElementById('btn-upgrade-factory');
+        
+        if (btnBakery) {
+            btnBakery.setAttribute('onclick', "upgradeBusiness('bakery')");
+        }
+        if (btnFactory) {
+            btnFactory.setAttribute('onclick', "upgradeBusiness('factory')");
+        }
+    });
+    </script>
 </body>
 </html>
 
