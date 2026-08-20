@@ -5,205 +5,150 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hexon Game Hub</title>
     <script src="https://telegram.org"></script>
-    <style>
-        :root {
-            --bg-color: #121214;
-            --card-bg: #1c1c1e;
-            --accent-blue: #2f80ed;
-            --accent-green: #34c759;
-            --accent-orange: #ff9500;
-            --text-main: #ffffff;
-            --text-muted: #8e8e93;
-            --border-color: #3a3a3c;
-        }
-        * { box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 16px;
-        }
-        .header-balance {
-            background: linear-gradient(135deg, #2c2c2e, #1c1c1e);
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            text-align: center;
-        }
-        .balance-item span { display: block; font-size: 12px; color: var(--text-muted); }
-        .balance-item strong { font-size: 16px; color: var(--accent-green); }
-        
-        .tabs {
-            display: flex;
-            background-color: var(--card-bg);
-            border-radius: 10px;
-            padding: 4px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border-color);
-        }
-
-</head>
-<body>
+      <style>
+    /* --- ИДЕАЛЬНАЯ WEB3 ПАЛИТРА С КЛАССАМИ ПОД ВАШ HTML --- */
     :root {
-        --bg-color: #0a0512;       /* Угольно-черный с фиолетовым отливом */
-        --card-bg: #130b24;        /* Фон карточек бизнесов и вкладок */
-        --neon-purple: #bd00ff;    /* Основной фиолетовый неон */
-        --neon-cyan: #00f0ff;      /* Электрический бирюзовый (для акцентов) */
-        --neon-green: #39ff14;     /* Ядовито-зеленый (для профита и рублей) */
-        --accent-orange: #ff9500;  /* Оранжевый для уровней */
-        --text-main: #f3effa;      /* Мягкий белый текст */
-        --text-muted: #8b7fa4;     /* Приглушенный текст */
-        --border-color: rgba(189, 0, 255, 0.2); /* Неоновая полупрозрачная рамка */
+      --bg-main: #0b0616;       /* Глубокий угольно-фиолетовый (база) */
+      --bg-card: #140d26;       /* Фон карточек (Пекарня, Завод, Работа) */
+      --mint-neon: #00ffcc;     /* Мятный неон для ДЕНЕГ, РУБЛЕЙ и ПРОФИТА */
+      --purple-neon: #9d00ff;   /* Фиолетовый неон для КНОПОК и АКТИВНЫХ ТАБОВ */
+      --text-white: #ffffff;    /* Чистый белый для названий */
+      --text-gray: #887e9c;     /* Приглушенный серый для описаний */
     }
-    * { box-sizing: border-box; }
+
+    /* Настройка всего экрана */
     body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        background-color: var(--bg-color);
-        color: var(--text-main);
-        margin: 0;
-        padding: 16px;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
+      background-color: var(--bg-main) !important;
+      color: var(--text-white) !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
+
+    /* Блок баланса (Header) */
     .header-balance {
-        background: linear-gradient(180deg, rgba(189, 0, 255, 0.1) 0%, rgba(19, 11, 36, 0.5) 100%);
-        border-radius: 16px;
-        padding: 16px;
-        margin-bottom: 20px;
-        border: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-around;
-        text-align: center;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      background: linear-gradient(180deg, rgba(157, 0, 255, 0.15) 0%, rgba(20, 13, 38, 0.6) 100%) !important;
+      border: 1px solid rgba(157, 0, 255, 0.3) !important;
+      border-radius: 16px !important;
+      padding: 16px !important;
+      margin-bottom: 20px !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(157, 0, 255, 0.1) !important;
     }
-    .balance-item span { 
-        display: block; 
-        font-size: 11px; 
-        text-transform: uppercase; 
-        letter-spacing: 0.5px; 
-        color: var(--text-muted); 
-        margin-bottom: 4px;
+    .balance-item span {
+      color: var(--text-gray) !important;
+      font-size: 11px !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.8px !important;
     }
-    .balance-item strong { 
-        font-size: 20px; 
-        color: #fff; 
-        text-shadow: 0 0 12px var(--neon-green);
+    .balance-item strong {
+      font-size: 22px !important;
+      color: #ffffff !important;
+      text-shadow: 0 0 12px var(--mint-neon) !important; /* Баланс горит мятным */
     }
-    /* Если у вас в балансе выводится NEXON, подсветим его бирюзовым */
-    .balance-item:last-child strong {
-        text-shadow: 0 0 12px var(--neon-cyan);
-    }
-    
+
+    /* Переключатель вкладок (Tabs) */
     .tabs {
-        display: flex;
-        background-color: rgba(19, 11, 36, 0.8);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        padding: 4px;
-        margin-bottom: 20px;
-        border: 1px solid var(--border-color);
+      background-color: rgba(20, 13, 38, 0.8) !important;
+      border: 1px solid rgba(157, 0, 255, 0.2) !important;
+      border-radius: 12px !important;
+      padding: 4px !important;
+      backdrop-filter: blur(10px);
     }
     .tab {
-        flex: 1;
-        padding: 12px;
-        text-align: center;
-        background: none;
-        border: none;
-        color: var(--text-muted);
-        font-size: 14px;
-        font-weight: bold;
-        cursor: pointer;
-        border-radius: 10px;
-        transition: all 0.2s ease;
+      color: var(--text-gray) !important;
+      font-size: 14px !important;
+      font-weight: bold !important;
+      padding: 12px !important;
+      border-radius: 10px !important;
+      transition: all 0.2s ease !important;
     }
-    .tab.active { 
-        background: linear-gradient(135deg, var(--neon-purple), #7900ff);
-        color: #fff; 
-        box-shadow: 0 0 10px rgba(189, 0, 255, 0.5);
+    /* Активная вкладка плавно горит фиолетовым */
+    .tab.active {
+      background: linear-gradient(135deg, var(--purple-neon), #6700c7) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 15px rgba(157, 0, 255, 0.6) !important;
     }
-    .page { display: none; }
-    .page.active { display: block; }
 
+    /* Карточки бизнесов и процессов */
     .card {
-        background-color: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(189, 0, 255, 0.03);
-        transition: transform 0.2s, border-color 0.2s;
+      background-color: var(--bg-card) !important;
+      border: 1px solid rgba(157, 0, 255, 0.2) !important;
+      border-radius: 16px !important;
+      padding: 20px !important;
+      margin-bottom: 16px !important;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
     }
-    .card:active {
-        transform: scale(0.99);
-        border-color: var(--neon-purple);
+    .card h3 {
+      color: var(--text-white) !important;
+      font-size: 18px !important;
+      margin: 0 0 6px 0 !important;
     }
-    .card h3 { 
-        margin: 0 0 8px 0; 
-        font-size: 18px; 
-        font-weight: 700;
-        letter-spacing: 0.3px;
+    /* Доход/Профит внутри карточки подсвечиваем сочной мятой */
+    .card p {
+      color: var(--mint-neon) !important;
+      text-shadow: 0 0 8px rgba(0, 255, 204, 0.2) !important;
+      font-size: 13px !important;
+      margin: 0 0 16px 0 !important;
     }
-    .card p { 
-        margin: 0 0 16px 0; 
-        font-size: 13px; 
-        color: var(--neon-green); /* Профит теперь сочно светится зеленым */
-        text-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
-    }
-    
-    .action-btn {
-        width: 100%;
-        padding: 14px;
-        border: none;
-        border-radius: 12px;
-        font-weight: bold;
-        font-size: 15px;
-        cursor: pointer;
-        text-align: center;
-        display: block;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        transition: all 0.2s ease;
-    }
-    /* Синяя кнопка (для обычных действий/работы) -> сделаем бирюзовый неон */
-    .btn-blue { 
-        background: linear-gradient(135deg, var(--neon-cyan), #00b0ff); 
-        color: #0a0512; 
-        box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
-    }
-    .btn-blue:active { box-shadow: 0 0 20px var(--neon-cyan); }
 
-    /* Зеленая кнопка (Купить/Улучшить) -> сделаем фиолетовый Web3 неон */
-    .btn-green { 
-        background: linear-gradient(135deg, var(--neon-purple), #7900ff); 
-        color: #fff; 
-        box-shadow: 0 0 12px rgba(189, 0, 255, 0.4);
+    /* ГЛОБАЛЬНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК В ИГРЕ */
+    .action-btn, button {
+      width: 100% !important;
+      padding: 14px !important;
+      border: none !important;
+      border-radius: 12px !important;
+      font-weight: 800 !important;
+      font-size: 14px !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.8px !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
     }
-    .btn-green:active { box-shadow: 0 0 25px var(--neon-purple); }
 
-    /* Оранжевая кнопка (Заблокировано/Работает таймер) */
-    .btn-orange { 
-        background-color: #241931; 
-        color: var(--text-muted); 
-        border: 1px dashed rgba(189, 0, 255, 0.3);
-        pointer-events: none; 
+    /* Кнопка "Купить / Улучшить" (.btn-green) -> Фиолетовый космический неон */
+    .btn-green {
+      background: linear-gradient(135deg, var(--purple-neon), #6700c7) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 14px rgba(157, 0, 255, 0.4) !important;
     }
-    
+    .btn-green:active {
+      box-shadow: 0 0 25px var(--purple-neon) !important;
+      transform: scale(0.98);
+    }
+
+    /* Кнопка "Работать" (.btn-blue) -> Яркий мятно-бирюзовый неон */
+    .btn-blue {
+      background: linear-gradient(135deg, var(--mint-neon), #00b3ff) !important;
+      color: #0b0616 !important; /* Темный текст для контраста */
+      box-shadow: 0 0 14px rgba(0, 255, 204, 0.3) !important;
+    }
+    .btn-blue:active {
+      box-shadow: 0 0 25px var(--mint-neon) !important;
+      transform: scale(0.98);
+    }
+
+    /* Кнопка блокировки (Занято / Идет таймер) (.btn-orange) */
+    .btn-orange {
+      background: #1d152e !important;
+      color: var(--text-gray) !important;
+      border: 1px dashed rgba(157, 0, 255, 0.3) !important;
+      box-shadow: none !important;
+      pointer-events: none !important;
+    }
+
+    /* Значок уровня (Badge) */
     .level-badge {
-        background-color: rgba(255, 149, 0, 0.1);
-        color: var(--accent-orange);
-        border: 1px solid rgba(255, 149, 0, 0.3);
-        padding: 4px 10px;
-        border-radius: 8px;
-        font-size: 11px;
-        font-weight: bold;
-        float: right;
-        text-shadow: 0 0 5px rgba(255, 149, 0, 0.3);
+      background-color: rgba(0, 255, 204, 0.1) !important;
+      color: var(--mint-neon) !important;
+      border: 1px solid rgba(0, 255, 204, 0.3) !important;
+      padding: 4px 10px !important;
+      border-radius: 8px !important;
+      font-size: 11px !important;
     }
-</style>
+  </style>
+
 
     <!-- Шапка балансов синхронизируется с базой сервера -->
     <div class="header-balance">
