@@ -147,6 +147,48 @@
       border-radius: 8px !important;
       font-size: 11px !important;
     }
+              /* Значок уровня (Badge) */
+    .level-badge {
+      background-color: rgba(0, 255, 204, 0.1) !important;
+      color: var(--mint-neon) !important;
+      border: 1px solid rgba(0, 255, 204, 0.3) !important;
+      padding: 4px 10px !important;
+      border-radius: 8px !important;
+      font-size: 11px !important;
+    }
+
+    /* ФИКС ДЛЯ ВОЗВРАТА СТРУКТУРЫ ВКЛАДОК */
+    .tabs {
+        display: flex !important;
+        flex-direction: row !important; /* Выстраиваем вкладки строго в один ряд */
+        justify-content: space-around !important;
+        background-color: rgba(20, 13, 38, 0.8) !important;
+        border: 1px solid rgba(157, 0, 255, 0.2) !important;
+        border-radius: 12px !important;
+        padding: 4px !important;
+        margin-bottom: 20px !important;
+    }
+
+    /* Исправляем размер самих кнопок-вкладок, чтобы они не растягивались на весь экран */
+    .tab {
+        flex: 1 !important;
+        width: auto !important;
+        padding: 12px !important;
+        margin: 0 !important;
+        text-transform: none !important; 
+        letter-spacing: normal !important;
+        border-radius: 10px !important;
+    }
+
+    /* Возвращаем логику скрытия страниц, чтобы они не накладывались друг на друга */
+    .page { 
+        display: none !important; 
+    }
+    .page.active { 
+        display: block !important; 
+    }
+  </style>
+
   </style>
 
 
