@@ -45,59 +45,165 @@
             margin-bottom: 16px;
             border: 1px solid var(--border-color);
         }
-        .tab {
-            flex: 1;
-            padding: 10px;
-            text-align: center;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 8px;
-        }
-        .tab.active { background-color: var(--accent-blue); color: var(--text-main); }
-        .page { display: none; }
-        .page.active { display: block; }
 
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 14px;
-        }
-        .card h3 { margin: 0 0 6px 0; font-size: 17px; }
-        .card p { margin: 0 0 14px 0; font-size: 13px; color: var(--text-muted); }
-        
-        .action-btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-            text-align: center;
-            display: block;
-        }
-        .btn-blue { background-color: var(--accent-blue); color: #fff; }
-        .btn-green { background-color: var(--accent-green); color: #fff; }
-        .btn-orange { background-color: var(--accent-orange); color: #fff; pointer-events: none; }
-        
-        .level-badge {
-            background-color: #3a3a3c;
-            color: var(--accent-orange);
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: bold;
-            float: right;
-        }
-    </style>
 </head>
 <body>
+    :root {
+        --bg-color: #0a0512;       /* Угольно-черный с фиолетовым отливом */
+        --card-bg: #130b24;        /* Фон карточек бизнесов и вкладок */
+        --neon-purple: #bd00ff;    /* Основной фиолетовый неон */
+        --neon-cyan: #00f0ff;      /* Электрический бирюзовый (для акцентов) */
+        --neon-green: #39ff14;     /* Ядовито-зеленый (для профита и рублей) */
+        --accent-orange: #ff9500;  /* Оранжевый для уровней */
+        --text-main: #f3effa;      /* Мягкий белый текст */
+        --text-muted: #8b7fa4;     /* Приглушенный текст */
+        --border-color: rgba(189, 0, 255, 0.2); /* Неоновая полупрозрачная рамка */
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        margin: 0;
+        padding: 16px;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .header-balance {
+        background: linear-gradient(180deg, rgba(189, 0, 255, 0.1) 0%, rgba(19, 11, 36, 0.5) 100%);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+    .balance-item span { 
+        display: block; 
+        font-size: 11px; 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px; 
+        color: var(--text-muted); 
+        margin-bottom: 4px;
+    }
+    .balance-item strong { 
+        font-size: 20px; 
+        color: #fff; 
+        text-shadow: 0 0 12px var(--neon-green);
+    }
+    /* Если у вас в балансе выводится NEXON, подсветим его бирюзовым */
+    .balance-item:last-child strong {
+        text-shadow: 0 0 12px var(--neon-cyan);
+    }
+    
+    .tabs {
+        display: flex;
+        background-color: rgba(19, 11, 36, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 4px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+    }
+    .tab {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    .tab.active { 
+        background: linear-gradient(135deg, var(--neon-purple), #7900ff);
+        color: #fff; 
+        box-shadow: 0 0 10px rgba(189, 0, 255, 0.5);
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(189, 0, 255, 0.03);
+        transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:active {
+        transform: scale(0.99);
+        border-color: var(--neon-purple);
+    }
+    .card h3 { 
+        margin: 0 0 8px 0; 
+        font-size: 18px; 
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .card p { 
+        margin: 0 0 16px 0; 
+        font-size: 13px; 
+        color: var(--neon-green); /* Профит теперь сочно светится зеленым */
+        text-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
+    }
+    
+    .action-btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 15px;
+        cursor: pointer;
+        text-align: center;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+    }
+    /* Синяя кнопка (для обычных действий/работы) -> сделаем бирюзовый неон */
+    .btn-blue { 
+        background: linear-gradient(135deg, var(--neon-cyan), #00b0ff); 
+        color: #0a0512; 
+        box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+    }
+    .btn-blue:active { box-shadow: 0 0 20px var(--neon-cyan); }
+
+    /* Зеленая кнопка (Купить/Улучшить) -> сделаем фиолетовый Web3 неон */
+    .btn-green { 
+        background: linear-gradient(135deg, var(--neon-purple), #7900ff); 
+        color: #fff; 
+        box-shadow: 0 0 12px rgba(189, 0, 255, 0.4);
+    }
+    .btn-green:active { box-shadow: 0 0 25px var(--neon-purple); }
+
+    /* Оранжевая кнопка (Заблокировано/Работает таймер) */
+    .btn-orange { 
+        background-color: #241931; 
+        color: var(--text-muted); 
+        border: 1px dashed rgba(189, 0, 255, 0.3);
+        pointer-events: none; 
+    }
+    
+    .level-badge {
+        background-color: rgba(255, 149, 0, 0.1);
+        color: var(--accent-orange);
+        border: 1px solid rgba(255, 149, 0, 0.3);
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: bold;
+        float: right;
+        text-shadow: 0 0 5px rgba(255, 149, 0, 0.3);
+    }
+</style>
 
     <!-- Шапка балансов синхронизируется с базой сервера -->
     <div class="header-balance">
