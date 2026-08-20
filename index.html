@@ -103,10 +103,20 @@
             color: var(--accent-green);
             margin-top: 10px;
         }
+        .level-badge {
+            background-color: #3a3a3c;
+            color: var(--accent-orange);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            float: right;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Шапка балансов -->
     <div class="header-balance">
         <div class="balance-item">
             <span>Игровые Рубли</span>
@@ -118,6 +128,7 @@
         </div>
     </div>
 
+    <!-- Трёхвкладочная навигация -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Бизнес</button>
@@ -143,17 +154,19 @@
         </div>
     </div>
 
-    <!-- Вкладка: Бизнес -->
+    <!-- Вкладка: Бизнес с апгрейдами -->
     <div id="business-page" class="page">
         <div class="card">
+            <span id="lvl-bakery" class="level-badge">Ур. 0</span>
             <h3>🥖 Городская Пекарня</h3>
-            <p>Цена: 5000 руб | Доход: +10 руб/ч</p>
-            <button class="action-btn btn-green" onclick="buyBusiness('bakery', 5000)">Купить Пекарню</button>
+            <p>Доход: <span id="inc-bakery" style="color:var(--accent-green);">+0 руб/ч</span> | +0 NEXON/ч</p>
+            <button id="btn-upgrade-bakery" class="action-btn btn-green" onclick="upgradeBusiness('bakery')">Купить за 5000 руб</button>
         </div>
         <div class="card">
+            <span id="lvl-factory" class="level-badge">Ур. 0</span>
             <h3>🏭 Тяжелый Завод</h3>
-            <p>Цена: 25000 руб | Доход: +60 руб/ч</p>
-            <button class="action-btn btn-green" onclick="buyBusiness('factory', 25000)">Купить Завод</button>
+            <p>Доход: <span id="inc-factory" style="color:var(--accent-green);">+0 руб/ч</span> | +0 NEXON/ч</p>
+            <button id="btn-upgrade-factory" class="action-btn btn-green" onclick="upgradeBusiness('factory')">Купить за 25000 руб</button>
         </div>
     </div>
 
@@ -162,13 +175,10 @@
         <div class="card">
             <h3>🤝 Приглашайте друзей!</h3>
             <p>Получайте внутриигровые бонусы и развивайте свою RWA-сеть.</p>
-            
             <p style="margin-bottom: 5px; font-weight: bold;">Ваша уникальная ссылка:</p>
             <div id="ref-link-text" class="ref-box">Загрузка ссылки...</div>
-            
             <button class="action-btn btn-blue" onclick="inviteFriend()" style="margin-bottom: 10px;">💬 Отправить другу в ТГ</button>
             <button class="action-btn btn-green" onclick="copyRefLink()">📋 Копировать ссылку</button>
-            
             <div class="stat-text">Приглашено друзей: <span id="ref-count-val">0</span></div>
         </div>
     </div>
@@ -180,18 +190,22 @@
             tg.expand();
         }
 
-        // Парсинг переданных ботом реальных параметров баланса, Telegram ID и рефералов
+        // Конфигурация цен и базовых доходов
+        const bizConfig = {
+            bakery: { name: "Пекарня", baseCost: 5000, stepCost: 3500, stepRub: 10, stepNexon: 0.5 },
+            factory: { name: "Завод", baseCost: 25000, stepCost: 15000, stepRub: 60, stepNexon: 3.0 }
+        };
+
+        // Загрузка балансов из параметров ссылки ТГ
         const urlParams = new URLSearchParams(window.location.search);
         let paramRub = urlParams.get('rub');
         let paramNexon = urlParams.get('nexon');
         let paramUid = urlParams.get('uid');
         let paramRefCount = urlParams.get('ref');
         
-        // Получаем и сохраняем реальный Telegram ID
         let realTelegramId = paramUid ? paramUid : (localStorage.getItem('hexon_uid') || "0");
         if (paramUid) localStorage.setItem('hexon_uid', paramUid);
 
-        // Получаем и сохраняем количество рефералов
         let totalRefs = paramRefCount ? paramRefCount : (localStorage.getItem('hexon_ref_count') || "0");
         if (paramRefCount) localStorage.setItem('hexon_ref_count', paramRefCount);
         document.getElementById('ref-count-val').innerText = totalRefs;
@@ -201,42 +215,94 @@
 
         var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
         var balanceNexon = parseFloat(localStorage.getItem('hexon_nexon') || '0');
+
+        // Считываем уровни бизнесов из памяти устройства (по умолчанию 0)
+        var lvlBakery = parseInt(localStorage.getItem('hexon_lvl_bakery') || '0');
+        var lvlFactory = parseInt(localStorage.getItem('hexon_lvl_factory') || '0');
+
         updateUI();
+        updateBusinessUI();
 
-        // СБОРКА ИДЕАЛЬНОЙ ССЫЛКИ: Ссылка ведет строго на бота с вашим реальным ID на конце
-        var botUsername = "Hexon_game_bot";
-        var finalRefLink = "https://t.me" + botUsername + "?start=" + realTelegramId;
-        document.getElementById('ref-link-text').innerText = finalRefLink;
-
+        // Запуск таймеров: проверка работы и ежесекундный пассивный доход
         setInterval(checkWorkTimer, 1000);
+        setInterval(processPassiveIncome, 1000);
 
         function updateUI() {
             document.getElementById('rub-val').innerText = balanceRub.toFixed(2) + ' ₽';
             document.getElementById('nexon-val').innerText = balanceNexon.toFixed(4);
         }
 
+        // Функция переключения вкладок
         function switchTab(pageId, tabButton) {
-            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-            document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             tabButton.classList.add('active');
         }
 
-        // 100% РАБОЧИЙ НАТИВНЫЙ МЕТОД ШЕРИНГА ДЛЯ TELEGRAM MINI APP
-        function inviteFriend() {
-            if (tg) {
-                var inviteText = "🚀 Начни зарабатывать рубли и токены NEXON в новой RWA-игре Hexon Game!";
-                // switchInlineQuery открывает выбор чата и подставляет готовую ссылку с текстом
-                tg.switchInlineQuery(realTelegramId + " " + inviteText, ["users", "groups"]);
+        // Обновление интерфейса вкладки Бизнеса
+        function updateBusinessUI() {
+            // Пекарня
+            document.getElementById('lvl-bakery').innerText = 'Ур. ' + lvlBakery;
+            var bIncomeRub = lvlBakery * bizConfig.bakery.stepRub;
+            var bIncomeNexon = lvlBakery * bizConfig.bakery.stepNexon;
+                        document.getElementById('inc-bakery').innerText = '+' + bIncomeRub + ' руб/ч | +' + bIncomeNexon + ' NEXON/ч';
+            var bNextCost = lvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (lvlBakery * bizConfig.bakery.stepCost);
+            document.getElementById('btn-upgrade-bakery').innerText = lvlBakery === 0 ? 'Купить за ' + bNextCost + ' руб' : 'Улучшить за ' + bNextCost + ' руб';
+
+            // Завод
+            document.getElementById('lvl-factory').innerText = 'Ур. ' + lvlFactory;
+            var fIncomeRub = lvlFactory * bizConfig.factory.stepRub;
+            var fIncomeNexon = lvlFactory * bizConfig.factory.stepNexon;
+            document.getElementById('inc-factory').innerText = '+' + fIncomeRub + ' руб/ч | +' + fIncomeNexon + ' NEXON/ч';
+            var fNextCost = lvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (lvlFactory * bizConfig.factory.stepCost);
+            document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
+        }
+
+        // Логика покупки/апгрейда бизнеса
+        function upgradeBusiness(bId) {
+            var currentLvl = bId === 'bakery' ? lvlBakery : lvlFactory;
+            var config = bizConfig[bId];
+            var cost = currentLvl === 0 ? config.baseCost : config.baseCost + (currentLvl * config.stepCost);
+
+            if (balanceRub >= cost) {
+                balanceRub -= cost;
+                currentLvl++;
+                
+                if (bId === 'bakery') {
+                    lvlBakery = currentLvl;
+                    localStorage.setItem('hexon_lvl_bakery', lvlBakery);
+                } else {
+                    lvlFactory = currentLvl;
+                    localStorage.setItem('hexon_lvl_factory', lvlFactory);
+                }
+                
+                localStorage.setItem('hexon_rub', balanceRub);
+                updateUI();
+                updateBusinessUI();
+                showMsg('🎉 Успешно!', config.name + ' прокачан до ' + currentLvl + ' уровня!');
+            } else {
+                showMsg('❌ Ошибка', 'Недостаточно игровых рублей для улучшения.');
             }
         }
 
-        function copyRefLink() {
-            navigator.clipboard.writeText(finalRefLink).then(function() {
-                showMsg('📋 Скопировано!', 'Уникальная ссылка сохранена в буфер обмена.');
-            });
+        // Начисление пассивного дохода в реальном времени каждую секунду!
+        function processPassiveIncome() {
+            var totalRubPerSec = ((lvlBakery * bizConfig.bakery.stepRub) + (lvlFactory * bizConfig.factory.stepRub)) / 3600;
+            var totalNexonPerSec = ((lvlBakery * bizConfig.bakery.stepNexon) + (lvlFactory * bizConfig.factory.stepNexon)) / 3600;
+
+            if (totalRubPerSec > 0 || totalNexonPerSec > 0) {
+                balanceRub += totalRubPerSec;
+                balanceNexon += totalNexonPerSec;
+                
+                localStorage.setItem('hexon_rub', balanceRub);
+                localStorage.setItem('hexon_nexon', balanceNexon);
+                
+                updateUI();
+            }
         }
 
+        // Функции для вкладки Работа
         function startWork(jobId, salary) {
             var now = Math.floor(Date.now() / 1000);
             var endWorkTime = now + (8 * 3600);
@@ -250,7 +316,7 @@
         }
 
         function checkWorkTimer() {
-                        var activeJob = localStorage.getItem('hexon_work_job');
+            var activeJob = localStorage.getItem('hexon_work_job');
             var endWorkTime = parseInt(localStorage.getItem('hexon_work_end') || '0');
             var now = Math.floor(Date.now() / 1000);
             var jobs = ['loader', 'courier', 'driver'];
@@ -291,15 +357,22 @@
             });
         }
 
-        function buyBusiness(bId, cost) {
-            if (balanceRub >= cost) {
-                balanceRub -= cost;
-                localStorage.setItem('hexon_rub', balanceRub);
-                updateUI();
-                showMsg('🎉 Успешно!', 'RWA-бизнес успешно приобретен!');
-            } else {
-                showMsg('❌ Ошибка', 'Недостаточно рублей на балансе Mini App.');
+        // Функции для вкладки Друзья
+        var botUsername = "Hexon_game_bot";
+        var finalRefLink = "https://t.me" + botUsername + "?start=" + realTelegramId;
+        document.getElementById('ref-link-text').innerText = finalRefLink;
+
+        function inviteFriend() {
+            if (tg) {
+                var inviteText = "🚀 Начни зарабатывать рубли и токены NEXON в новой RWA-игре Hexon Game!";
+                tg.switchInlineQuery(realTelegramId + " " + inviteText, ["users", "groups"]);
             }
+        }
+
+        function copyRefLink() {
+            navigator.clipboard.writeText(finalRefLink).then(function() {
+                showMsg('📋 Скопировано!', 'Уникальная ссылка сохранена в буфер обмена.');
+            });
         }
 
         function showMsg(titleText, messageText) {
