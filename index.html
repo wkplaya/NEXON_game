@@ -1,254 +1,3 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <!-- ПРАВИЛЬНОЕ ПОДКЛЮЧЕНИЕ БИБЛИОТЕК TELEGRAM И TON CONNECT -->
-    <script src="https://telegram.org"></script>
-    <script src="https://unpkg.com"></script>
-    
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hexon Game Hub</title>
-    
-    <style>
-        /* --- ЦВЕТОВАЯ ПАЛИТРА CYBER PUNK & ACID MINT --- */
-        :root {
-            --bg-main: #08040d;       /* Глубокий космический бархат */
-            --bg-card: #130b24;       /* Фон карточек RWA и Биржи */
-            --mint-neon: #00ffcc;     /* Мятный неон для NEXON, Рублей и Профита */
-            --purple-neon: #9d00ff;   /* Премиальный фиолетовый для кнопок и вкладок */
-            --signal-orange: #ff5500; /* Сигнальный оранжевый для таймеров */
-            --text-white: #ffffff;    /* Чистый белый */
-            --text-gray: #887e9c;     /* Приглушенный серый */
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-white);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 16px;
-            padding-bottom: 40px;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Шапка балансов */
-        .header-balance {
-            background: linear-gradient(180deg, rgba(157, 0, 255, 0.15) 0%, rgba(19, 11, 36, 0.5) 100%);
-            border: 1px solid rgba(157, 0, 255, 0.25);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(157, 0, 255, 0.05);
-            display: flex;
-            justify-content: space-around;
-            text-align: center;
-        }
-        .balance-item span {
-            color: var(--text-gray);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            display: block;
-            margin-bottom: 4px;
-        }
-        .balance-item strong {
-            font-size: 22px;
-            color: #ffffff;
-            text-shadow: 0 0 12px var(--mint-neon);
-        }
-
-        /* Меню вкладок */
-        .tabs {
-            display: flex;
-            background-color: rgba(20, 13, 38, 0.8);
-            border: 1px solid rgba(157, 0, 255, 0.15);
-            border-radius: 12px;
-            padding: 4px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-        }
-        .tab {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            background: none;
-            border: none;
-            color: var(--text-gray);
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
-        .tab.active {
-            background: linear-gradient(135deg, var(--purple-neon), #6700c7);
-            color: #ffffff;
-            box-shadow: 0 0 15px rgba(157, 0, 255, 0.5);
-        }
-
-        .page { display: none; }
-        .page.active { display: block; }
-
-        /* Карточки */
-        .card {
-            background-color: var(--bg-card);
-            border: 1px solid rgba(157, 0, 255, 0.15);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-            position: relative;
-        }
-        .card h3 { margin: 0 0 6px 0; font-size: 18px; }
-        .card p {
-            color: var(--mint-neon);
-            text-shadow: 0 0 8px rgba(0, 255, 204, 0.15);
-            font-size: 13px;
-            margin: 0 0 16px 0;
-        }
-        .card .rwa-badge {
-            font-size: 10px;
-            color: var(--text-gray);
-            display: block;
-            margin-top: -12px;
-            margin-bottom: 12px;
-        }
-
-        /* Кнопки */
-        .action-btn {
-            display: block;
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: center;
-            margin-bottom: 8px;
-        }
-        .btn-blue {
-            background: linear-gradient(135deg, var(--mint-neon), #00b3ff);
-            color: #08040d;
-            box-shadow: 0 0 12px rgba(0, 255, 204, 0.2);
-        }
-        .btn-green {
-            background: linear-gradient(135deg, var(--purple-neon), #6700c7);
-            color: #ffffff;
-            box-shadow: 0 0 12px rgba(157, 0, 255, 0.3);
-        }
-        .btn-stars {
-            background: linear-gradient(135deg, #ffda24, #ff9d00);
-            color: #08040d;
-            box-shadow: 0 0 12px rgba(255, 218, 36, 0.3);
-        }
-        .btn-orange {
-            background: #1d152e;
-            color: var(--signal-orange);
-            border: 1px dashed var(--signal-orange);
-            box-shadow: none;
-            pointer-events: none;
-        }
-        .action-btn:active:not(.btn-orange) { transform: scale(0.98); }
-
-        .level-badge {
-            background-color: rgba(0, 255, 204, 0.08);
-            color: var(--mint-neon);
-            border: 1px solid rgba(0, 255, 204, 0.25);
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: bold;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-        }
-
-        #ton-connect-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 16px;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Шапка балансов -->
-    <div class="header-balance">
-        <div class="balance-item">
-            <span>Игровые Рубли</span>
-            <strong id="rub-val">0.00 ₽</strong>
-        </div>
-        <div class="balance-item">
-            <span>Токены NEXON</span>
-            <strong id="nexon-val">0.0000</strong>
-        </div>
-    </div>
-
-    <!-- Навигация -->
-    <div class="tabs">
-        <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
-        <button class="tab" onclick="switchTab('business-page', this)">🏪 Бизнес</button>
-        <button class="tab" onclick="switchTab('friends-page', this)">👥 Друзья</button>
-    </div>
-
-    <!-- Вкладка: Работа -->
-    <div id="work-page" class="page active">
-        <div class="card">
-            <h3>👷 Грузчик на склад</h3>
-            <p>Зарплата: 500 руб / 8 часов</p>
-            <button id="btn-loader" class="action-btn btn-blue" onclick="requestServerWork('loader')">Начать смену (8ч)</button>
-        </div>
-        <div class="card">
-            <h3>🚴 Курьер доставки</h3>
-            <p>Зарплата: 500 руб / 8 часов</p>
-            <button id="btn-courier" class="action-btn btn-blue" onclick="requestServerWork('courier')">Начать смену (8ч)</button>
-        </div>
-        <div class="card">
-            <h3>🚗 Водитель такси</h3>
-            <p>Зарплата: 500 руб / 8 часов</p>
-            <button id="btn-driver" class="action-btn btn-blue" onclick="requestServerWork('driver')">Начать смену (8ч)</button>
-        </div>
-    </div>
-
-    <!-- Вкладка: Бизнес -->
-    <div id="business-page" class="page">
-        <div class="card">
-            <span id="lvl-bakery" class="level-badge">Ур. 0</span>
-            <h3>🥖 Городская Пекарня</h3>
-            <span class="rwa-badge">Обеспечено RWA пулом #1</span>
-            <p>Доход: <span id="inc-bakery">+0 руб/ч | +0 NEXON/ч</span></p>
-            <button id="btn-upgrade-bakery" class="action-btn btn-green" onclick="requestServerUpgrade('bakery')">Купить за 5000 руб</button>
-            <button class="action-btn btn-stars" onclick="requestStarsInvoice('bakery')">⭐ Купить за Stars</button>
-        </div>
-        <div class="card">
-            <span id="lvl-factory" class="level-badge">Ур. 0</span>
-            <h3>🏭 Тяжелый Завод</h3>
-            <span class="rwa-badge">Обеспечено RWA пулом #2</span>
-            <p>Доход: <span id="inc-factory">+0 руб/ч | +0 NEXON/ч</span></p>
-            <button id="btn-upgrade-factory" class="action-btn btn-green" onclick="requestServerUpgrade('factory')">Купить за 25000 руб</button>
-            <button class="action-btn btn-stars" onclick="requestStarsInvoice('factory')">⭐ Купить за Stars</button>
-        </div>
-    </div>
-
-    <!-- Вкладка: Друзья -->
-    <div id="friends-page" class="page">
-        <div class="card" style="text-align: center;">
-            <h3>💎 Web3 Кошелек</h3>
-            <p style="color: var(--text-gray); text-shadow: none;">Привяжите TON кошелек для будущего минта токенов NEXON</p>
-            <div id="ton-connect-container"></div>
-        </div>
-        <div class="card" style="text-align: center;">
-            <h3>👥 Реферальная система</h3>
-            <p style="color: var(--text-gray); text-shadow: none;">Получайте +10% от заработка друзей на Бирже Труда!</p>
-            <h4 style="margin: 10px 0; font-size: 20px;">Друзей приглашено: <span id="ref-count" style="color: var(--mint-neon);">0</span></h4>
-            <button class="action-btn btn-blue" onclick="shareReferralLink()">🔗 Пригласить друга</button>
-        </div>
-    </div>
     <script>
         // Инициализация Telegram WebApp
         var tg = window.Telegram ? window.Telegram.WebApp : null;
@@ -423,6 +172,200 @@
                             title: '💰 Смена окончена!', 
                             message: 'Смена проверена сервером! Нажмите ОК и перезапустите игру в боте, чтобы забрать +500 ₽!', 
                             buttons: [{type: 'ok', text: 'Забрать'}] 
+                        });
+                    }
+                    localStorage.removeItem('hexon_work_job');
+                    localStorage.removeItem('hexon_work_end');
+                } else {
+                    if (activeJob === null || activeJob === "") {
+                        btn.className = 'action-btn btn-blue';
+                        btn.innerText = 'Начать смену (8ч)';
+                    } else {
+                        btn.className = 'action-btn btn-orange';
+                        btn.innerText = 'Занят на другой смене';
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+    <script>
+        // Инициализация Telegram WebApp
+        var tg = window.Telegram ? window.Telegram.WebApp : null;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        // Инициализация кнопки TON Connect
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://githubusercontent.com',
+            buttonRootId: 'ton-connect-container'
+        });
+
+        // Конфигурация экономики пулов
+        const bizConfig = {
+            bakery: { name: "Пекарня", baseCost: 5000, stepCost: 3500, stepRub: 10, stepNexon: 0.5 },
+            factory: { name: "Завод", baseCost: 25000, stepCost: 15000, stepRub: 60, stepNexon: 3.0 }
+        };
+
+        // Разбор параметров из ссылки (URLSearchParams)
+        const urlParams = new URLSearchParams(window.location.search);
+        let paramRub = urlParams.get('rub');
+        let paramNexon = urlParams.get('nexon');
+        let paramLvlBakery = urlParams.get('lb');
+        let paramLvlFactory = urlParams.get('lf');
+        let paramWorkEnd = urlParams.get('we');   
+        let paramWorkJob = urlParams.get('wj');   
+        let paramRefCount = urlParams.get('ref'); 
+
+        // ИСПРАВЛЕНИЕ ОШИБКИ GIVE_MONEY: Если пришли новые данные от сервера, полностью очищаем старый кэш
+        if (paramRub !== null) {
+            localStorage.clear(); // Стираем зависшую память телефона, чтобы применить новые рубли
+            localStorage.setItem('hexon_rub', paramRub);
+        }
+        if (paramNexon !== null) localStorage.setItem('hexon_nexon', paramNexon);
+        if (paramLvlBakery !== null) localStorage.setItem('hexon_lvl_bakery', paramLvlBakery);
+        if (paramLvlFactory !== null) localStorage.setItem('hexon_lvl_factory', paramLvlFactory);
+        if (paramRefCount !== null) localStorage.setItem('hexon_ref_count', paramRefCount);
+        if (paramWorkEnd !== null && paramWorkJob !== null) {
+            localStorage.setItem('hexon_work_end', paramWorkEnd);
+            localStorage.setItem('hexon_work_job', paramWorkJob);
+        }
+
+        // Инициализируем переменные на основе чистой памяти
+        var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
+        var balanceNexon = parseFloat(localStorage.getItem('hexon_nexon') || '0');
+        var lvlBakery = parseInt(localStorage.getItem('hexon_lvl_bakery') || '0');
+        var lvlFactory = parseInt(localStorage.getItem('hexon_lvl_factory') || '0');
+        var friendsCount = parseInt(localStorage.getItem('hexon_ref_count') || '0');
+
+        // Рендеринг данных на экране
+        updateUI();
+        updateBusinessUI();
+        document.getElementById('ref-count').innerText = friendsCount;
+
+        // Включаем тикание таймеров каждую секунду
+        setInterval(checkWorkTimer, 1000);
+        setInterval(processPassiveIncome, 1000);
+
+        function updateUI() {
+            document.getElementById('rub-val').innerText = balanceRub.toFixed(2) + ' ₽';
+            document.getElementById('nexon-val').innerText = balanceNexon.toFixed(4) + ' NEXON';
+        }
+
+        function switchTab(pageId, tabButton) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            tabButton.classList.add('active');
+        }
+
+        function updateBusinessUI() {
+            // Отрисовка Пекарни
+            document.getElementById('lvl-bakery').innerText = 'Ур. ' + lvlBakery;
+            var bIncomeRub = lvlBakery * bizConfig.bakery.stepRub;
+            var bIncomeNexon = lvlBakery * bizConfig.bakery.stepNexon;
+            document.getElementById('inc-bakery').innerText = '+' + bIncomeRub + ' руб/ч | +' + bIncomeNexon.toFixed(1) + ' NEXON/ч';
+            var bNextCost = lvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (lvlBakery * bizConfig.bakery.stepCost);
+            document.getElementById('btn-upgrade-bakery').innerText = lvlBakery === 0 ? 'Купить за ' + bNextCost + ' руб' : 'Улучшить за ' + bNextCost + ' руб';
+
+            // Отрисовка Завода
+            document.getElementById('lvl-factory').innerText = 'Ур. ' + lvlFactory;
+            var fIncomeRub = lvlFactory * bizConfig.factory.stepRub;
+            var fIncomeNexon = lvlFactory * bizConfig.factory.stepNexon;
+            document.getElementById('inc-factory').innerText = '+' + fIncomeRub + ' руб/ч | +' + fIncomeNexon.toFixed(1) + ' NEXON/ч';
+            var fNextCost = lvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (lvlFactory * bizConfig.factory.stepCost);
+            document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
+        }
+
+        // ИСПРАВЛЕНИЕ КНОПКИ БИЗНЕСА: Прямой, жесткий вызов без условий, разрешенный Telegram
+        function requestServerUpgrade(businessId) {
+            if (!businessId) return;
+            window.Telegram.WebApp.openTelegramLink('https://t.me_' + businessId);
+        }
+
+        // ИСПРАВЛЕНИЕ КНОПКИ STARS: Вызов официального инвойса звезд
+        function requestStarsInvoice(businessId) {
+            if (!businessId) return;
+            window.Telegram.WebApp.openTelegramLink('https://t.me_' + businessId);
+        }
+
+        // ИСПРАВЛЕНИЕ КНОПКИ РАБОТЫ: Старт 8-часовой смены
+        function requestServerWork(jobId) {
+            if (!jobId) return;
+            localStorage.setItem('hexon_work_job', jobId);
+            localStorage.setItem('hexon_work_end', Math.floor(Date.now() / 1000) + 28800);
+            window.Telegram.WebApp.openTelegramLink('https://t.me_' + jobId);
+        }
+
+        // ИСПРАВЛЕНИЕ ОШИБКИ С ID РЕФЕРАЛОВ: Считывание ID со 100% страховкой пула
+        function shareReferralLink() {
+            let userId = null;
+            
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                userId = tg.initDataUnsafe.user.id;
+            } else if (tg && tg.initData) {
+                const searchParams = new URLSearchParams(tg.initData);
+                const userRaw = searchParams.get('user');
+                if (userRaw) {
+                    try {
+                        const userObj = JSON.parse(decodeURIComponent(userRaw));
+                        userId = userObj.id;
+                    } catch(e) {}
+                }
+            }
+
+            // Если Telegram вообще зажал ID игрока, подставляем ID администратора пула
+            if (!userId) {
+                userId = "8067646739"; 
+            }
+
+            tg.switchInlineQuery('Присоединяйся к Hexon Game! Начнем майнить NEXON вместе: t.me/Hexon_game_bot?start=ref_' + userId, ['users', 'chats', 'groups']);
+        }
+
+        // Ежесекундное локальное начисление NEXON на экране
+        function processPassiveIncome() {
+            var totalRubPerSec = ((lvlBakery * bizConfig.bakery.stepRub) + (lvlFactory * bizConfig.factory.stepRub)) / 3600;
+            var totalNexonPerSec = ((lvlBakery * bizConfig.bakery.stepNexon) + (lvlFactory * bizConfig.factory.stepNexon)) / 3600;
+
+            if (totalRubPerSec > 0 || totalNexonPerSec > 0) {
+                balanceRub += totalRubPerSec;
+                balanceNexon += totalNexonPerSec;
+                updateUI();
+            }
+        }
+
+        // Отсчет и блокировка кнопок работы
+        function checkWorkTimer() {
+            var activeJob = localStorage.getItem('hexon_work_job');
+            var endWorkTime = parseInt(localStorage.getItem('hexon_work_end') || '0');
+            var now = Math.floor(Date.now() / 1000);
+            var jobs = ['loader', 'courier', 'driver'];
+            
+            jobs.forEach(function(jId) {
+                var btn = document.getElementById('btn-' + jId);
+                if (!btn) return;
+
+                if (activeJob === jId && endWorkTime > now) {
+                    var diff = endWorkTime - now;
+                    var hours = Math.floor(diff / 3600);
+                    var minutes = Math.floor((diff % 3600) / 60);
+                    var seconds = diff % 60;
+                    var timeStr = (hours < 10 ? '0' + hours : hours) + ':' + (minutes < 10 ? '0' + minutes : minutes) + ':' + (seconds < 10 ? '0' + seconds : seconds);
+
+                    btn.className = 'action-btn btn-orange';
+                    btn.innerText = 'Осталось: ' + timeStr;
+                } else if (activeJob === jId && endWorkTime <= now && endWorkTime !== 0) {
+                    btn.className = 'action-btn btn-blue';
+                    btn.innerText = 'Начать смену (8ч)';
+                    
+                    if (tg && tg.showPopup) {
+                        tg.showPopup({ 
+                            title: '💰 Смена окончена!', 
+                            message: 'Смена проверена сервером. Пожалуйста, закройте игру и перезапустите бота, чтобы забрать +500 ₽!', 
+                            buttons: [{type: 'ok', text: 'Ура'}] 
                         });
                     }
                     localStorage.removeItem('hexon_work_job');
