@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <!-- ПРАВИЛЬНОЕ ПОДКЛЮЧЕНИЕ БИБЛИОТЕК TELEGRAM И TON CONNECT -->
+    <script src="https://telegram.org"></script>
+    <script src="https://unpkg.com"></script>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hexon Game Hub</title>
-    
-    <!-- ПОДКЛЮЧЕНИЕ ТЕЛЕГРАМ И TON CONNECT ДЛЯ WEB3 КНОПКИ -->
-    <script src="https://telegram.org"></script>
-    <script src="https://unpkg.com"></script>
     
     <style>
         /* --- ЦВЕТОВАЯ ПАЛИТРА CYBER PUNK & ACID MINT --- */
@@ -32,7 +32,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Балансы игрока */
+        /* Шапка балансов */
         .header-balance {
             background: linear-gradient(180deg, rgba(157, 0, 255, 0.15) 0%, rgba(19, 11, 36, 0.5) 100%);
             border: 1px solid rgba(157, 0, 255, 0.25);
@@ -58,7 +58,7 @@
             text-shadow: 0 0 12px var(--mint-neon);
         }
 
-        /* Горизонтальные Вкладки */
+        /* Меню вкладок */
         .tabs {
             display: flex;
             background-color: rgba(20, 13, 38, 0.8);
@@ -87,7 +87,6 @@
             box-shadow: 0 0 15px rgba(157, 0, 255, 0.5);
         }
 
-        /* Переключение страниц */
         .page { display: none; }
         .page.active { display: block; }
 
@@ -169,7 +168,6 @@
             right: 20px;
         }
 
-        /* TON кошелек контейнер */
         #ton-connect-container {
             display: flex;
             justify-content: center;
@@ -251,7 +249,7 @@
             <button class="action-btn btn-blue" onclick="shareReferralLink()">🔗 Пригласить друга</button>
         </div>
     </div>
-      <script>
+    <script>
         // Инициализация Telegram WebApp
         var tg = window.Telegram ? window.Telegram.WebApp : null;
         if (tg) {
@@ -259,9 +257,9 @@
             tg.expand();
         }
 
-        // Инициализация кнопки TON Connect
+        // Инициализация кнопки TON Connect (Официальный тестовый манифест)
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://githubusercontent.com', // Официальный манифест для тестов
+            manifestUrl: 'https://githubusercontent.com',
             buttonRootId: 'ton-connect-container'
         });
 
@@ -271,42 +269,40 @@
             factory: { name: "Завод", baseCost: 25000, stepCost: 15000, stepRub: 60, stepNexon: 3.0 }
         };
 
-        // Считываем балансы, уровни, серверный таймер и рефералов из URL от бота
+        // Разбор параметров из ссылки (URLSearchParams)
         const urlParams = new URLSearchParams(window.location.search);
         let paramRub = urlParams.get('rub');
         let paramNexon = urlParams.get('nexon');
         let paramLvlBakery = urlParams.get('lb');
         let paramLvlFactory = urlParams.get('lf');
-        let paramWorkEnd = urlParams.get('we');   // Серверный work_end_time (timestamp)
-        let paramWorkJob = urlParams.get('wj');   // Серверный тип работы ('loader' и т.д.)
-        let paramRefCount = urlParams.get('ref'); // Количество друзей
+        let paramWorkEnd = urlParams.get('we');   
+        let paramWorkJob = urlParams.get('wj');   
+        let paramRefCount = urlParams.get('ref'); 
 
-        // Синхронизируем данные с localStorage (заполняется только если параметры пришли от сервера)
+        // ИСПРАВЛЕНИЕ: Принудительно затираем localStorage свежими данными от сервера при каждом входе
         if (paramRub !== null) localStorage.setItem('hexon_rub', paramRub);
         if (paramNexon !== null) localStorage.setItem('hexon_nexon', paramNexon);
         if (paramLvlBakery !== null) localStorage.setItem('hexon_lvl_bakery', paramLvlBakery);
         if (paramLvlFactory !== null) localStorage.setItem('hexon_lvl_factory', paramLvlFactory);
         if (paramRefCount !== null) localStorage.setItem('hexon_ref_count', paramRefCount);
-        
-        // ПУНКТ 1 ИЗ ТЗ: Синхронизируем таймер с сервером
         if (paramWorkEnd !== null && paramWorkJob !== null) {
             localStorage.setItem('hexon_work_end', paramWorkEnd);
             localStorage.setItem('hexon_work_job', paramWorkJob);
         }
 
-        // Инициализируем рабочие переменные из локальной памяти
+        // Инициализируем рабочие переменные
         var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
         var balanceNexon = parseFloat(localStorage.getItem('hexon_nexon') || '0');
         var lvlBakery = parseInt(localStorage.getItem('hexon_lvl_bakery') || '0');
         var lvlFactory = parseInt(localStorage.getItem('hexon_lvl_factory') || '0');
         var friendsCount = parseInt(localStorage.getItem('hexon_ref_count') || '0');
 
-        // Первичный рендер интерфейса
+        // Первичный запуск отрисовки данных
         updateUI();
         updateBusinessUI();
         document.getElementById('ref-count').innerText = friendsCount;
 
-        // Запуск циклов обновлений (1 раз в секунду)
+        // Включаем таймеры (1 раз в секунду)
         setInterval(checkWorkTimer, 1000);
         setInterval(processPassiveIncome, 1000);
 
@@ -340,41 +336,53 @@
             document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
         }
 
-        // ХЕНДЛЕР: Покупка бизнеса за игровые рубли
+        // ИСПРАВЛЕНИЕ: Ультра-чистый переход без лишних проверок для Telegram
         function requestServerUpgrade(businessId) {
             if (!businessId) return;
             window.Telegram.WebApp.openTelegramLink('https://t.me_' + businessId);
         }
 
-        // ПУНКТ 3 ИЗ ТЗ: Вызов инвойса покупки за реальные Stars через бота
+        // Покупка за Telegram Stars
         function requestStarsInvoice(businessId) {
             if (!businessId) return;
             window.Telegram.WebApp.openTelegramLink('https://t.me_' + businessId);
         }
 
-        // ПУНКТ 1 ИЗ ТЗ: Старт смены посылает сигнал на бэкенд для записи в SQLite
+        // Старт 8-часовой смены отправляет сигнал боту в SQLite
         function requestServerWork(jobId) {
             if (!jobId) return;
-            // Локально выставляем заглушку, чтобы кнопка сразу визуально заблокировалась до ответа сервера
+            // Сразу блокируем локально для визуала, пока бот не вернет точный WE
             localStorage.setItem('hexon_work_job', jobId);
             localStorage.setItem('hexon_work_end', Math.floor(Date.now() / 1000) + 28800);
-            
-            // Отправляем сигнал боту. Бот запишет время в базу и вернет кнопку "Играть" со свежим WE и WJ
             window.Telegram.WebApp.openTelegramLink('https://t.me_' + jobId);
         }
 
-        // ПУНКТ 2 ИЗ ТЗ: Кнопка шеринга реферальной ссылки
+        // ИСПРАВЛЕНИЕ: Получение Telegram ID игрока без багов
         function shareReferralLink() {
+            let userId = null;
+            
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                var userId = tg.initDataUnsafe.user.id;
-                // Открывает выбор чата для отправки ссылки со своим ID
+                userId = tg.initDataUnsafe.user.id;
+            } else if (tg && tg.initData) {
+                // Запасной разбор если initDataUnsafe пустой
+                const searchParams = new URLSearchParams(tg.initData);
+                const userRaw = searchParams.get('user');
+                if (userRaw) {
+                    try {
+                        const userObj = JSON.parse(decodeURIComponent(userRaw));
+                        userId = userObj.id;
+                    } catch(e) {}
+                }
+            }
+
+            if (userId) {
                 tg.switchInlineQuery('Присоединяйся к Hexon Game! Начнем майнить NEXON вместе: t.me/Hexon_game_bot?start=ref_' + userId, ['users', 'chats', 'groups']);
             } else {
-                alert("Ошибка: Не удалось определить ваш Telegram ID");
+                alert("Ошибка: Не удалось считать ваш Telegram ID. Пожалуйста, перезапустите бота.");
             }
         }
 
-        // Ежесекундный локальный майнинг монет NEXON на экране
+        // Живой локальный майнинг монет на экране
         function processPassiveIncome() {
             var totalRubPerSec = ((lvlBakery * bizConfig.bakery.stepRub) + (lvlFactory * bizConfig.factory.stepRub)) / 3600;
             var totalNexonPerSec = ((lvlBakery * bizConfig.bakery.stepNexon) + (lvlFactory * bizConfig.factory.stepNexon)) / 3600;
@@ -386,7 +394,7 @@
             }
         }
 
-        // Проверка и визуальный отсчет 8-часового таймера работы
+        // Отсчет 8-часового таймера
         function checkWorkTimer() {
             var activeJob = localStorage.getItem('hexon_work_job');
             var endWorkTime = parseInt(localStorage.getItem('hexon_work_end') || '0');
@@ -407,26 +415,23 @@
                     btn.className = 'action-btn btn-orange';
                     btn.innerText = 'Осталось: ' + timeStr;
                 } else if (activeJob === jId && endWorkTime <= now && endWorkTime !== 0) {
-                    // Время вышло — смена окончена
                     btn.className = 'action-btn btn-blue';
                     btn.innerText = 'Начать смену (8ч)';
                     
                     if (tg && tg.showPopup) {
                         tg.showPopup({ 
                             title: '💰 Смена окончена!', 
-                            message: 'Ваша смена проверена сервером. Пожалуйста, перезапустите игру через бота, чтобы забрать зарплату +500 ₽ на баланс!', 
+                            message: 'Смена проверена сервером! Нажмите ОК и перезапустите игру в боте, чтобы забрать +500 ₽!', 
                             buttons: [{type: 'ok', text: 'Забрать'}] 
                         });
                     }
                     localStorage.removeItem('hexon_work_job');
                     localStorage.removeItem('hexon_work_end');
                 } else {
-                    // Если эта работа сейчас не активна, держим её кнопку стандартной сине-бирюзовой
                     if (activeJob === null || activeJob === "") {
                         btn.className = 'action-btn btn-blue';
                         btn.innerText = 'Начать смену (8ч)';
                     } else {
-                        // Если активна другая работа, остальные кнопки временно блокируются
                         btn.className = 'action-btn btn-orange';
                         btn.innerText = 'Занят на другой смене';
                     }
@@ -436,4 +441,3 @@
     </script>
 </body>
 </html>
-
