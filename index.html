@@ -399,35 +399,34 @@
             tg.ready();
             tg.expand();
         }
-    </script>
-
-        <!-- ОБНОВЛЕННЫЙ ИСПРАВЛЕННЫЙ СКРИПТ (ЗАЩИТА ОТ ПУСТЫХ ССЫЛОК) -->
+        </script>
+       <!-- ОБНОВЛЕННЫЙ ИСПРАВЛЕННЫЙ СКРИПТ (ЗАЩИТА ОТ ПУСТЫХ ССЫЛОК) -->
     <script>
-        function requestServerUpgrade(businessType) {
-            // Если вдруг тип бизнеса не передался, принудительно берем его из кнопок
-            if (!businessType) {
-                console.error("Ошибка: тип бизнеса не указан");
-                alert("Ошибка клика. Пожалуйста, перезапустите игру.");
-                return;
-            }
-
-            // Собираем ссылку строго на вашего бота Hexon_game_bot
-            var botName = "Hexon_game_bot";
-            var deepLink = 'https://t.me/' + botName + '?start=buy_' + businessType;
+        // УЛЬТИМАТИВНЫЙ ВАРИАНТ: БЕЗ АЛЕРТОВ И ОКНОК. ТОЛЬКО ЖЕСТКИЙ ПЕРЕХОД.
+        function requestServerUpgrade(businessId) {
+            if (!businessId) return;
             
-            // Проверяем наличие Telegram WebApp контекста
+            var botUsername = "Hexon_game_bot";
+            var deepLink = "https://t.me" + botUsername + "?start=buy_" + businessId;
+            
+            // Пытаемся закрыть Mini App и открыть чат через Telegram
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
-                // Нативно открываем ссылку в Telegram
-                window.Telegram.WebApp.openTelegramLink(deepLink);
-            } else {
-                // Если открыли в обычном браузере, показываем правильную ссылку для проверки
-                alert("Запустите игру через Telegram! Ссылка на вашего бота:\n" + deepLink);
+                try {
+                    window.Telegram.WebApp.openTelegramLink(deepLink);
+                    return; // Если сработало — выходим
+                } catch(e) {
+                    // Если выдало ошибку, скрипт пойдет дальше к жесткому редиректу
+                }
             }
+            
+            // Если Telegram не инициализировался или выдал ошибку — 
+            // принудительно перенаправляем вкладку на диплинк бота.
+            window.location.href = deepLink;
         }
     </script>
-
 </body>
 </html>
+ 
+        
 </body>
 </html>
-
