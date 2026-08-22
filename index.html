@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <!-- ОФИЦИАЛЬНОЕ ПОДКЛЮЧЕНИЕ БИБЛИОТЕК TELEGRAM И TON Connect -->
+    <!-- Официальное подключение библиотек Telegram WebApp и TON Connect UI -->
     <script src="https://telegram.org"></script>
     <script src="https://unpkg.com"></script>
     
@@ -215,7 +215,6 @@
             <button id="btn-driver" class="action-btn btn-blue" onclick="requestServerWork('driver')">Начать смену (8ч)</button>
         </div>
     </div>
-
     <!-- Вкладка: Бизнес -->
     <div id="business-page" class="page">
         <div class="card">
@@ -250,6 +249,7 @@
             <button class="action-btn btn-blue" onclick="shareReferralLink()">🔗 Пригласить друга</button>
         </div>
     </div>
+
     <script>
         // Инициализация Telegram WebApp
         var tg = window.Telegram ? window.Telegram.WebApp : null;
@@ -258,19 +258,22 @@
             tg.expand();
         }
 
-        // Инициализация кнопки TON Connect (Официальный тестовый манифест)
+        // ИСПРАВЛЕНО: Генерация динамического пути к манифесту для корректного TON Connect
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://githubusercontent.com',
+            manifestUrl: window.location.origin + window.location.pathname + 'tonconnect-manifest.json',
             buttonRootId: 'ton-connect-container'
         });
 
-        // Конфигурация экономики пулов
+        // Юзернейм вашего бота для сборки диплинков
+        const BOT_USERNAME = "Hexon_game_bot";
+
+        // Экономика предприятия пулов
         const bizConfig = {
             bakery: { name: "Пекарня", baseCost: 5000, stepCost: 3500, stepRub: 10, stepNexon: 0.5 },
             factory: { name: "Завод", baseCost: 25000, stepCost: 15000, stepRub: 60, stepNexon: 3.0 }
         };
 
-        // Разбор параметров из ссылки (URLSearchParams)
+        // Разбор переданных сервером параметров пула
         const urlParams = new URLSearchParams(window.location.search);
         let paramRub = urlParams.get('rub');
         let paramNexon = urlParams.get('nexon');
@@ -280,7 +283,7 @@
         let paramWorkJob = urlParams.get('wj');   
         let paramRefCount = urlParams.get('ref'); 
 
-        // ИСПРАВЛЕНИЕ: Если пришли новые данные от сервера, полностью очищаем старый кэш и пишем новые балансы
+        // ИСПРАВЛЕНО: Синхронизация данных. Если пришел новый URL, заменяем им локальный кэш
         if (paramRub !== null) {
             localStorage.clear(); 
             localStorage.setItem('hexon_rub', paramRub);
@@ -294,19 +297,19 @@
             localStorage.setItem('hexon_work_job', paramWorkJob);
         }
 
-        // Инициализируем переменные на основе чистой памяти
+        // Подгрузка балансов из памяти
         var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
         var balanceNexon = parseFloat(localStorage.getItem('hexon_nexon') || '0');
         var lvlBakery = parseInt(localStorage.getItem('hexon_lvl_bakery') || '0');
         var lvlFactory = parseInt(localStorage.getItem('hexon_lvl_factory') || '0');
         var friendsCount = parseInt(localStorage.getItem('hexon_ref_count') || '0');
 
-        // Рендеринг данных на экране
+        // Первичная прорисовка интерфейса
         updateUI();
         updateBusinessUI();
         document.getElementById('ref-count').innerText = friendsCount;
 
-        // Включаем тикание таймеров каждую секунду
+        // Потоковые таймеры обновлений
         setInterval(checkWorkTimer, 1000);
         setInterval(processPassiveIncome, 1000);
 
@@ -323,7 +326,7 @@
         }
 
         function updateBusinessUI() {
-            // Отрисовка Пекарни
+            // Состояние Пекарни
             document.getElementById('lvl-bakery').innerText = 'Ур. ' + lvlBakery;
             var bIncomeRub = lvlBakery * bizConfig.bakery.stepRub;
             var bIncomeNexon = lvlBakery * bizConfig.bakery.stepNexon;
@@ -331,7 +334,7 @@
             var bNextCost = lvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (lvlBakery * bizConfig.bakery.stepCost);
             document.getElementById('btn-upgrade-bakery').innerText = lvlBakery === 0 ? 'Купить за ' + bNextCost + ' руб' : 'Улучшить за ' + bNextCost + ' руб';
 
-            // Отрисовка Завода
+            // Состояние Завода
             document.getElementById('lvl-factory').innerText = 'Ур. ' + lvlFactory;
             var fIncomeRub = lvlFactory * bizConfig.factory.stepRub;
             var fIncomeNexon = lvlFactory * bizConfig.factory.stepNexon;
@@ -340,30 +343,27 @@
             document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
         }
 
-        // Кнопка бизнеса
+        // ИСПРАВЛЕНО: Полностью переписаны функции редиректов под валидные диплинки Telegram
         function requestServerUpgrade(businessId) {
-            if (!businessId) return;
-            window.Telegram.WebApp.openTelegramLink('https://t.me_' + businessId);
+            if (!businessId || !tg) return;
+            tg.openTelegramLink('https://t.me' + BOT_USERNAME + '?start=buy_' + businessId);
         }
 
-        // Покупка за Telegram Stars
         function requestStarsInvoice(businessId) {
-            if (!businessId) return;
-            window.Telegram.WebApp.openTelegramLink('https://t.me_' + businessId);
+            if (!businessId || !tg) return;
+            tg.openTelegramLink('https://t.me' + BOT_USERNAME + '?start=stars_' + businessId);
         }
 
-        // Кнопка работы
         function requestServerWork(jobId) {
-            if (!jobId) return;
+            if (!jobId || !tg) return;
+            // Ставим локальную заглушку для плавной блокировки до ответа сервера
             localStorage.setItem('hexon_work_job', jobId);
             localStorage.setItem('hexon_work_end', Math.floor(Date.now() / 1000) + 28800);
-            window.Telegram.WebApp.openTelegramLink('https://t.me_' + jobId);
+            tg.openTelegramLink('https://t.me' + BOT_USERNAME + '?start=work_' + jobId);
         }
 
-        // Кнопка рефералов с авто-подстраховкой ID создателя пула
         function shareReferralLink() {
-            let userId = "8067646739"; // По умолчанию ID админа, если Telegram не успел ответить
-            
+            let userId = "8067646739"; // Бэкап-ID
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 userId = tg.initDataUnsafe.user.id;
             } else if (tg && tg.initData) {
@@ -376,11 +376,10 @@
                     } catch(e) {}
                 }
             }
-
-            tg.switchInlineQuery('Присоединяйся к Hexon Game! Начнем майнить NEXON вместе: t.me/Hexon_game_bot?start=ref_' + userId, ['users', 'chats', 'groups']);
+            tg.switchInlineQuery('Присоединяйся к Hexon Game! Начнем майнить NEXON вместе: t.me/' + BOT_USERNAME + '?start=ref_' + userId, ['users', 'chats', 'groups']);
         }
 
-        // Ежесекундное локальное начисление NEXON на экране
+        // Ежесекундное начисление токенов на экране (визуальное)
         function processPassiveIncome() {
             var totalRubPerSec = ((lvlBakery * bizConfig.bakery.stepRub) + (lvlFactory * bizConfig.factory.stepRub)) / 3600;
             var totalNexonPerSec = ((lvlBakery * bizConfig.bakery.stepNexon) + (lvlFactory * bizConfig.factory.stepNexon)) / 3600;
@@ -392,7 +391,7 @@
             }
         }
 
-        // Отсчет и блокировка кнопок работы
+        // Логика проверки и анимации таймеров профессий
         function checkWorkTimer() {
             var activeJob = localStorage.getItem('hexon_work_job');
             var endWorkTime = parseInt(localStorage.getItem('hexon_work_end') || '0');
@@ -426,7 +425,7 @@
                     localStorage.removeItem('hexon_work_job');
                     localStorage.removeItem('hexon_work_end');
                 } else {
-                    if (activeJob === null || activeJob === "") {
+                    if (activeJob === null || activeJob === "" || activeJob === "none") {
                         btn.className = 'action-btn btn-blue';
                         btn.innerText = 'Начать смену (8ч)';
                     } else {
@@ -436,6 +435,14 @@
                 }
             });
         }
+
+        // Фоновый перехват кошелька и отправка диплинка в базу данных
+        tonConnectUI.onStatusChange(function(wallet) {
+            if (wallet && wallet.account && wallet.account.address && tg) {
+                var rawAddress = wallet.account.address;
+                tg.openTelegramLink('https://t.me' + BOT_USERNAME + '?start=wallet_' + rawAddress);
+            }
+        });
     </script>
 </body>
 </html>
