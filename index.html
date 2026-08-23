@@ -68,7 +68,6 @@
             font-weight: bold;
             cursor: pointer;
             border-radius: 10px;
-            transition: all 0.2s ease;
         }
         .tab.active {
             background: linear-gradient(135deg, var(--purple-neon), #6700c7);
@@ -83,7 +82,6 @@
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 16px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
             position: relative;
         }
         .card h3 { margin: 0 0 6px 0; font-size: 18px; }
@@ -109,7 +107,6 @@
             font-size: 13px;
             text-transform: uppercase;
             cursor: pointer;
-            transition: all 0.2s ease;
             text-align: center;
             margin-bottom: 8px;
         }
@@ -139,7 +136,6 @@
 </head>
 <body>
 
-    <!-- Шапка балансов -->
     <div class="header-balance">
         <div class="balance-item">
             <span>Игровые Рубли</span>
@@ -151,14 +147,12 @@
         </div>
     </div>
 
-    <!-- Горизонтальное меню -->
     <div class="tabs">
         <button class="tab active" onclick="switchTab('work-page', this)">💼 Работа</button>
         <button class="tab" onclick="switchTab('business-page', this)">🏪 Бизнес</button>
         <button class="tab" onclick="switchTab('friends-page', this)">👥 Друзья</button>
     </div>
 
-    <!-- Страница: Работа -->
     <div id="work-page" class="page active">
         <div class="card">
             <h3>👷 Грузчик на склад</h3>
@@ -177,7 +171,6 @@
         </div>
     </div>
 
-    <!-- Страница: Бизнес -->
     <div id="business-page" class="page">
         <div class="card">
             <span id="lvl-bakery" class="level-badge">Ур. 0</span>
@@ -197,7 +190,6 @@
         </div>
     </div>
 
-    <!-- Страница: Друзья -->
     <div id="friends-page" class="page">
         <div class="card" style="text-align: center;">
             <h3>👥 Реферальная система</h3>
@@ -221,18 +213,26 @@
             factory: { name: "Завод", baseCost: 25000, stepCost: 15000, stepRub: 60, stepNexon: 3.0 }
         };
 
-        // Чтение параметров напрямую из адресной строки
         const urlParams = new URLSearchParams(window.location.search);
-        
-        if (urlParams.get('rub') !== null) {
+        let paramRub = urlParams.get('rub');
+        let paramNexon = urlParams.get('nexon');
+        let paramLvlBakery = urlParams.get('lb');
+        let paramLvlFactory = urlParams.get('lf');
+        let paramWorkEnd = urlParams.get('we');   
+        let paramWorkJob = urlParams.get('wj');   
+        let paramRefCount = urlParams.get('ref'); 
+
+        if (paramRub !== null) {
             localStorage.clear(); 
-            localStorage.setItem('hexon_rub', urlParams.get('rub'));
-            localStorage.setItem('hexon_nexon', urlParams.get('nexon') || '0');
-            localStorage.setItem('hexon_lvl_bakery', urlParams.get('lb') || '0');
-            localStorage.setItem('hexon_lvl_factory', urlParams.get('lf') || '0');
-            localStorage.setItem('hexon_ref_count', urlParams.get('ref') || '0');
-            localStorage.setItem('hexon_work_end', urlParams.get('we') || '0');
-            localStorage.setItem('hexon_work_job', urlParams.get('wj') || '');
+            localStorage.setItem('hexon_rub', paramRub);
+        }
+        if (paramNexon !== null) localStorage.setItem('hexon_nexon', paramNexon);
+        if (paramLvlBakery !== null) localStorage.setItem('hexon_lvl_bakery', paramLvlBakery);
+        if (paramLvlFactory !== null) localStorage.setItem('hexon_lvl_factory', paramLvlFactory);
+        if (paramRefCount !== null) localStorage.setItem('hexon_ref_count', paramRefCount);
+        if (paramWorkEnd !== null && paramWorkJob !== null) {
+            localStorage.setItem('hexon_work_end', paramWorkEnd);
+            localStorage.setItem('hexon_work_job', paramWorkJob);
         }
 
         var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
@@ -241,12 +241,10 @@
         var lvlFactory = parseInt(localStorage.getItem('hexon_lvl_factory') || '0');
         var friendsCount = parseInt(localStorage.getItem('hexon_ref_count') || '0');
 
-        // Рендеринг интерфейса
         updateUI();
         updateBusinessUI();
         document.getElementById('ref-count').innerText = friendsCount;
 
-        setInterval(checkWorkTimer, 1000);
         setInterval(checkWorkTimer, 1000);
         setInterval(processPassiveIncome, 1000);
 
@@ -256,9 +254,9 @@
         }
 
         function switchTab(pageId, tabButton) {
-            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(pageId).style.display = 'block';
+            document.getElementById(pageId).classList.add('active');
             tabButton.classList.add('active');
         }
 
@@ -278,38 +276,37 @@
             document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
         }
 
+        // МОБИЛЬНОЕ ИСПРАВЛЕНИЕ: Использование нативного API Телеграма вместо прямых ссылок браузера
+        function sendMobileDeepLink(param) {
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink('https://t.me' + BOT_USERNAME + '?start=' + param);
+            } else {
+                window.open('https://t.me' + BOT_USERNAME + '?start=' + param, '_blank');
+            }
+        }
+
         function requestServerUpgrade(businessId) {
-            if (!businessId || !tg) return;
-            tg.openTelegramLink('https://t.me' + BOT_USERNAME + '?start=buy_' + businessId);
+            sendMobileDeepLink('buy_' + businessId);
         }
 
         function requestStarsInvoice(businessId) {
-            if (!businessId || !tg) return;
-            tg.openTelegramLink('https://t.me' + BOT_USERNAME + '?start=stars_' + businessId);
+            sendMobileDeepLink('stars_' + businessId);
         }
 
         function requestServerWork(jobId) {
-            if (!jobId || !tg) return;
             localStorage.setItem('hexon_work_job', jobId);
             localStorage.setItem('hexon_work_end', Math.floor(Date.now() / 1000) + 28800);
-            tg.openTelegramLink('https://t.me' + BOT_USERNAME + '?start=work_' + jobId);
+            sendMobileDeepLink('work_' + jobId);
         }
 
         function shareReferralLink() {
             let userId = "8067646739"; 
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 userId = tg.initDataUnsafe.user.id;
-            } else if (tg && tg.initData) {
-                const searchParams = new URLSearchParams(tg.initData);
-                const userRaw = searchParams.get('user');
-                if (userRaw) {
-                    try {
-                        const userObj = JSON.parse(decodeURIComponent(userRaw));
-                        userId = userObj.id;
-                    } catch(e) {}
-                }
             }
-            tg.switchInlineQuery('Присоединяйся к Hexon Game! t.me/' + BOT_USERNAME + '?start=ref_' + userId, ['users', 'chats', 'groups']);
+            if (tg && tg.switchInlineQuery) {
+                tg.switchInlineQuery('Присоединяйся к Hexon Game! t.me/' + BOT_USERNAME + '?start=ref_' + userId, ['users', 'chats', 'groups']);
+            }
         }
 
         function processPassiveIncome() {
@@ -369,3 +366,5 @@
     </script>
 </body>
 </html>
+
+
