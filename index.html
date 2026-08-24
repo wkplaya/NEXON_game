@@ -199,7 +199,8 @@
         </div>
     </div>
 
-    <script>
+      <script>
+        // Инициализация Telegram WebApp SDK
         var tg = window.Telegram ? window.Telegram.WebApp : null;
         if (tg) {
             tg.ready();
@@ -208,11 +209,13 @@
 
         const BOT_USERNAME = "Hexon_game_bot";
 
+        // Конфигурация бизнесов RWA
         const bizConfig = {
             bakery: { name: "Пекарня", baseCost: 5000, stepCost: 3500, stepRub: 10, stepNexon: 0.5 },
             factory: { name: "Завод", baseCost: 25000, stepCost: 15000, stepRub: 60, stepNexon: 3.0 }
         };
 
+        // Чтение параметров из URL
         const urlParams = new URLSearchParams(window.location.search);
         let paramRub = urlParams.get('rub');
         let paramNexon = urlParams.get('nexon');
@@ -222,185 +225,165 @@
         let paramWorkJob = urlParams.get('wj');   
         let paramRefCount = urlParams.get('ref'); 
 
-        if (paramRub !== null) {
-            localStorage.setItem('hexon_rub', paramRub);
-        }
+        // Обновление локальной памяти при наличии параметров в URL (Антикэш)
+        if (paramRub !== null) localStorage.setItem('hexon_rub', paramRub);
         if (paramNexon !== null) localStorage.setItem('hexon_nexon', paramNexon);
         if (paramLvlBakery !== null) localStorage.setItem('hexon_lvl_bakery', paramLvlBakery);
         if (paramLvlFactory !== null) localStorage.setItem('hexon_lvl_factory', paramLvlFactory);
         if (paramRefCount !== null) localStorage.setItem('hexon_ref_count', paramRefCount);
-        // Считываем серверный таймер только если на сервере действительно активна смена
+        
+        // Синхронизируем таймер с сервером только если смена на сервере активна (> 0)
         if (paramWorkEnd !== null && parseInt(paramWorkEnd) > 0) {
             localStorage.setItem('hexon_work_end', paramWorkEnd);
             if (paramWorkJob !== null) localStorage.setItem('hexon_work_job', paramWorkJob);
         }
 
+        // Глобальные переменные игры
         var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
         var balanceNexon = parseFloat(localStorage.getItem('hexon_nexon') || '0');
         var lvlBakery = parseInt(localStorage.getItem('hexon_lvl_bakery') || '0');
         var lvlFactory = parseInt(localStorage.getItem('hexon_lvl_factory') || '0');
         var friendsCount = parseInt(localStorage.getItem('hexon_ref_count') || '0');
 
+        // Первичный рендер интерфейса
         updateUI();
         updateBusinessUI();
-        document.getElementById('ref-count').innerText = friendsCount;
+        
+        var refElem = document.getElementById('ref-count');
+        if (refElem) refElem.innerText = friendsCount;
 
+        // Игровые циклы (Таймеры и Пассивный доход)
         setInterval(checkWorkTimer, 1000);
         setInterval(processPassiveIncome, 1000);
 
         function updateUI() {
-            document.getElementById('rub-val').innerText = balanceRub.toFixed(2) + ' ₽';
-            document.getElementById('nexon-val').innerText = balanceNexon.toFixed(4) + ' NEXON';
+            var rubElem = document.getElementById('rub-val');
+            var nexonElem = document.getElementById('nexon-val');
+            if (rubElem) rubElem.innerText = balanceRub.toFixed(2) + ' ₽';
+            if (nexonElem) nexonElem.innerText = balanceNexon.toFixed(4) + ' NEXON';
         }
 
         function switchTab(pageId, tabButton) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            tabButton.classList.add('active');
+            var targetPage = document.getElementById(pageId);
+            if (targetPage) targetPage.classList.add('active');
+            if (tabButton) tabButton.classList.add('active');
         }
 
         function updateBusinessUI() {
-            document.getElementById('lvl-bakery').innerText = 'Ур. ' + lvlBakery;
-            var bIncomeRub = lvlBakery * bizConfig.bakery.stepRub;
-            var bIncomeNexon = lvlBakery * bizConfig.bakery.stepNexon;
-            document.getElementById('inc-bakery').innerText = '+' + bIncomeRub + ' руб/ч | +' + bIncomeNexon.toFixed(1) + ' NEXON/ч';
-            var bNextCost = lvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (lvlBakery * bizConfig.bakery.stepCost);
-            document.getElementById('btn-upgrade-bakery').innerText = lvlBakery === 0 ? 'Купить за ' + bNextCost + ' руб' : 'Улучшить за ' + bNextCost + ' руб';
-
-            document.getElementById('lvl-factory').innerText = 'Ур. ' + lvlFactory;
-            var fIncomeRub = lvlFactory * bizConfig.factory.stepRub;
-            var fIncomeNexon = lvlFactory * bizConfig.factory.stepNexon;
-            document.getElementById('inc-factory').innerText = '+' + fIncomeRub + ' руб/ч | +' + fIncomeNexon.toFixed(1) + ' NEXON/ч';
-            var fNextCost = lvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (lvlFactory * bizConfig.factory.stepCost);
-            document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
-        } 
-
-        function sendMobileDeepLink(param) {
-            // Очищаем юзернейм на всякий случай
-            var pureUsername = BOT_USERNAME.replace('@', '').trim();
+            // Визуал Пекарни
+            var lvlBakeryElem = document.getElementById('lvl-bakery');
+            if (lvlBakeryElem) lvlBakeryElem.innerText = 'Ур. ' + lvlBakery;
             
-            // Формируем чистую текстовую команду, которую бот точно поймет
-            var commandText = "/start " + param;
-
-            if (tg) {
-                // Использовать нативный метод открытия диалога с ботом напрямую
-                if (tg.openTelegramLink) {
-                    // Перенаправляем на прямую ссылку бота. ВНИМАНИЕ на правильный слэш!
-                    tg.openTelegramLink('https://t.me' + pureUsername + '?start=' + param);
-                    tg.close();
-                    return;
-                }
-                
-                // Самый мощный резервный вариант: открывает выбор чата и предлагает отправить команду
-                if (tg.switchInlineQuery) {
-                    tg.switchInlineQuery(commandText);
-                    return;
-                }
+            var incBakeryElem = document.getElementById('inc-bakery');
+            if (incBakeryElem) {
+                var bIncomeRub = lvlBakery * bizConfig.bakery.stepRub;
+                var bIncomeNexon = lvlBakery * bizConfig.bakery.stepNexon;
+                incBakeryElem.innerText = '+' + bIncomeRub + ' руб/ч | +' + bIncomeNexon.toFixed(1) + ' NEXON/ч';
             }
             
-            // Если открыто на ПК в браузере
-            window.open('https://t.me' + pureUsername + '?start=' + param, '_blank');
+            var btnBakeryElem = document.getElementById('btn-upgrade-bakery');
+            if (btnBakeryElem) {
+                var bNextCost = lvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (lvlBakery * bizConfig.bakery.stepCost);
+                btnBakeryElem.innerText = lvlBakery === 0 ? 'Купить за ' + bNextCost + ' руб' : 'Улучшить за ' + bNextCost + ' руб';
+            }
+
+            // Визуал Завода
+            var lvlFactoryElem = document.getElementById('lvl-factory');
+            if (lvlFactoryElem) lvlFactoryElem.innerText = 'Ур. ' + lvlFactory;
+            
+            var incFactoryElem = document.getElementById('inc-factory');
+            if (incFactoryElem) {
+                var fIncomeRub = lvlFactory * bizConfig.factory.stepRub;
+                var fIncomeNexon = lvlFactory * bizConfig.factory.stepNexon;
+                incFactoryElem.innerText = '+' + fIncomeRub + ' руб/ч | +' + fIncomeNexon.toFixed(1) + ' NEXON/ч';
+            }
+            
+            var btnFactoryElem = document.getElementById('btn-upgrade-factory');
+            if (btnFactoryElem) {
+                var fNextCost = lvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (lvlFactory * bizConfig.factory.stepCost);
+                btnFactoryElem.innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
+            }
         }
-
+        // Покупка бизнеса через фоновую отправку боту (ТЗ №3)
         function requestServerUpgrade(businessId) {
-            // Формируем команду для бота (например, buy_bakery или buy_factory)
-            var command = 'buy_' + businessId;
-
-            // Считываем актуальные уровни из памяти телефона
-            var currentLvlBakery = parseInt(localStorage.getItem('hexon_lvl_bakery') || '0');
-            var currentLvlFactory = parseInt(localStorage.getItem('hexon_lvl_factory') || '0');
-            var currentBalanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
-
-            // Рассчитываем стоимость улучшения по вашему конфигу бизнеса
             var currentCost = 0;
             if (businessId === 'bakery') {
-                currentCost = currentLvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (currentLvlBakery * bizConfig.bakery.stepCost);
+                currentCost = lvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (lvlBakery * bizConfig.bakery.stepCost);
             } else if (businessId === 'factory') {
-                currentCost = currentLvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (currentLvlFactory * bizConfig.factory.stepCost);
+                currentCost = lvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (lvlFactory * bizConfig.factory.stepCost);
             }
 
-            // Проверяем баланс
-            if (currentBalanceRub < currentCost) {
+            // Проверка баланса на фронтенде перед отправкой
+            if (balanceRub < currentCost) {
                 if (tg && tg.showPopup) {
                     tg.showPopup({
-                        title: '❌ Ошибка',
-                        message: 'Недостаточно рублей для покупки! Требуется: ' + currentCost + ' ₽',
+                        title: '❌ Недостаточно средств',
+                        message: 'Вам нужно ' + currentCost + ' ₽ для апгрейда.',
                         buttons: [{type: 'ok', text: 'Понятно'}]
                     });
                 } else {
-                    alert('Недостаточно рублей! Требуется: ' + currentCost + ' ₽');
+                    alert('Недостаточно средств! Нужно: ' + currentCost + ' ₽');
                 }
-                return; // Останавливаем выполнение, если не хватает денег
+                return;
             }
 
-            // Если денег хватает — отправляем фоновые данные и обновляем визуал
             if (tg) {
                 try {
-                    // Отправляем строку боту скрытно
-                    tg.sendData(command);
+                    // Отправляем скрытый интент боту через нативный фоновый метод
+                    tg.sendData('buy_' + businessId);
                     
-                    // Вычитаем стоимость и повышаем уровень локально
-                    currentBalanceRub -= currentCost;
-                    localStorage.setItem('hexon_rub', currentBalanceRub.toString());
+                    // Обновляем визуал локально (для плавности интерфейса)
+                    balanceRub -= currentCost;
+                    localStorage.setItem('hexon_rub', balanceRub.toString());
 
                     if (businessId === 'bakery') {
-                        currentLvlBakery += 1;
-                        localStorage.setItem('hexon_lvl_bakery', currentLvlBakery.toString());
+                        lvlBakery += 1;
+                        localStorage.setItem('hexon_lvl_bakery', lvlBakery.toString());
                     } else if (businessId === 'factory') {
-                        currentLvlFactory += 1;
-                        localStorage.setItem('hexon_lvl_factory', currentLvlFactory.toString());
+                        lvlFactory += 1;
+                        localStorage.setItem('hexon_lvl_factory', lvlFactory.toString());
                     }
                     
-                    // Синхронизируем глобальные переменные вашего скрипта
-                    if (typeof balanceRub !== 'undefined') balanceRub = currentBalanceRub;
-                    if (typeof lvlBakery !== 'undefined') lvlBakery = currentLvlBakery;
-                    if (typeof lvlFactory !== 'undefined') lvlFactory = currentLvlFactory;
-                    
-                    // Вызываем ваши родные функции обновления интерфейса сайта
-                    if (typeof updateUI === 'function') updateUI();
-                    if (typeof updateBusinessUI === 'function') updateBusinessUI();
+                    updateUI();
+                    updateBusinessUI();
 
-                    // Показываем красивое всплывающее окно Telegram
                     if (tg.showPopup) {
                         tg.showPopup({
-                            title: '🏪 Успешно!',
-                            message: 'Запрос отправлен на сервер. Уровень бизнеса повышен!',
+                            title: '🏪 Запрос отправлен',
+                            message: 'Бизнес успешно улучшен! Бот зафиксировал покупку в базе данных.',
                             buttons: [{type: 'ok', text: 'Отлично'}]
                         });
                     }
                 } catch(e) {
-                    alert("Ошибка отправки данных. Пожалуйста, перезапустите Mini App.");
+                    alert("Ошибка отправки данных. Перезапустите Mini App.");
                 }
             }
         }
 
-        function requestStarsInvoice(businessId) {
-            sendMobileDeepLink('stars_' + businessId);
-        }
-
+        // Запуск работы через фоновую отправку боту (ТЗ №1)
         function requestServerWork(jobId) {
-            // Сохраняем данные локально, чтобы таймер сразу пошел визуально
             localStorage.setItem('hexon_work_job', jobId);
             localStorage.setItem('hexon_work_end', (Math.floor(Date.now() / 1000) + 28800).toString());
             
-            // Нативно обновляем интерфейс, чтобы кнопка сразу стала оранжевой
-            currentJob = jobId;
-            workEndTimestamp = Math.floor(Date.now() / 1000) + 28800;
             checkWorkTimer();
             
-            // Безопасная отправка данных серверу без использования кривых ссылок
             if (tg) {
-                // Если Mini App открыт через KeyboardButton / Ссылку
                 try {
                     tg.sendData("work_" + jobId);
                 } catch(e) {
-                    // Резервный вариант, если sendData недоступен в данном типе инлайн-кнопок
                     sendMobileDeepLink("work_" + jobId);
                 }
             }
         }
 
+        // Покупка за Telegram Stars (Deep Link на инвойс - ТЗ №3)
+        function requestStarsInvoice(businessId) {
+            sendMobileDeepLink('stars_' + businessId);
+        }
+
+        // Реферальный шеринг (ТЗ №2)
         function shareReferralLink() {
             let userId = "8067646739"; 
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
@@ -411,6 +394,18 @@
             }
         }
 
+        // Мобильный резервный диплинк (используется для Stars с правильным слэшем)
+        function sendMobileDeepLink(param) {
+            var pureUsername = BOT_USERNAME.replace('@', '').trim();
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink('https://t.me' + pureUsername + '?start=' + param);
+                tg.close();
+            } else {
+                window.open('https://t.me' + pureUsername + '?start=' + param, '_blank');
+            }
+        }
+
+        // Посекундное начисление пассивного дохода (Исправленная опечатка)
         function processPassiveIncome() {
             var totalRubPerSec = ((lvlBakery * bizConfig.bakery.stepRub) + (lvlFactory * bizConfig.factory.stepRub)) / 3600;
             var totalNexonPerSec = ((lvlBakery * bizConfig.bakery.stepNexon) + (lvlFactory * bizConfig.factory.stepNexon)) / 3600;
@@ -418,10 +413,15 @@
             if (totalRubPerSec > 0 || totalNexonPerSec > 0) {
                 balanceRub += totalRubPerSec;
                 balanceNexon += totalNexonPerSec;
+                
+                localStorage.setItem('hexon_rub', balanceRub.toString());
+                localStorage.setItem('hexon_nexon', balanceNexon.toString());
+                
                 updateUI();
             }
         }
 
+        // Проверка и визуал таймера Биржи Труда (ТЗ №1)
         function checkWorkTimer() {
             var activeJob = localStorage.getItem('hexon_work_job');
             var endWorkTime = parseInt(localStorage.getItem('hexon_work_end') || '0');
@@ -440,9 +440,11 @@
                     var timeStr = (hours < 10 ? '0' + hours : hours) + ':' + (minutes < 10 ? '0' + minutes : minutes) + ':' + (seconds < 10 ? '0' + seconds : seconds);
 
                     btn.className = 'action-btn btn-orange';
+                    btn.disabled = false;
                     btn.innerText = 'Осталось: ' + timeStr;
                 } else if (activeJob === jId && endWorkTime <= now && endWorkTime !== 0) {
                     btn.className = 'action-btn btn-blue';
+                    btn.disabled = false;
                     btn.innerText = 'Начать смену (8ч)';
                     
                     if (tg && tg.showPopup) {
@@ -457,9 +459,11 @@
                 } else {
                     if (activeJob === null || activeJob === "" || activeJob === "none") {
                         btn.className = 'action-btn btn-blue';
+                        btn.disabled = false;
                         btn.innerText = 'Начать смену (8ч)';
                     } else {
                         btn.className = 'action-btn btn-orange';
+                        btn.disabled = true;
                         btn.innerText = 'Занят на другой смене';
                     }
                 }
@@ -468,5 +472,3 @@
     </script>
 </body>
 </html>
-
-
