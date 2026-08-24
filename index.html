@@ -292,7 +292,29 @@ function sendMobileDeepLink(param) {
 }
 
         function requestServerUpgrade(businessId) {
-            sendMobileDeepLink('buy_' + businessId);
+            // Формируем команду для бота (например, buy_bakery)
+            var command = 'buy_' + businessId;
+
+            if (tg) {
+                try {
+                    // Мгновенно отправляем команду боту в фоновом режиме
+                    tg.sendData(command);
+                    
+                    // Выводим красивое уведомление прямо в игре, что запрос отправлен
+                    if (tg.showPopup) {
+                        tg.showPopup({
+                            title: '🏪 Запрос отправлен',
+                            message: 'Бот обрабатывает покупку бизнеса. Пожалуйста, перезапустите игру через секунду, чтобы увидеть новый уровень!',
+                            buttons: [{type: 'ok', text: 'Хорошо'}]
+                        });
+                    }
+                } catch(e) {
+                    // Резервный вариант, если Mini App открыт не через обычную кнопку
+                    sendMobileDeepLink(command);
+                }
+            } else {
+                sendMobileDeepLink(command);
+            }
         }
 
         function requestStarsInvoice(businessId) {
