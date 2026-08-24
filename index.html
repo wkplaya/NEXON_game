@@ -274,14 +274,16 @@
             document.getElementById('inc-factory').innerText = '+' + fIncomeRub + ' руб/ч | +' + fIncomeNexon.toFixed(1) + ' NEXON/ч';
             var fNextCost = lvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (lvlFactory * bizConfig.factory.stepCost);
             document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
-        }
-
-        // МОБИЛЬНОЕ ИСПРАВЛЕНИЕ: Использование нативного API Телеграма вместо прямых ссылок браузера
+        } 
+      
+       // МОБИЛЬНОЕ ИСПРАВЛЕНИЕ: Использование нативного API Телеграма с правильным слэшем
         function sendMobileDeepLink(param) {
+            var correctLink = 'https://t.me' + BOT_USERNAME + '?start=' + param;
             if (tg && tg.openTelegramLink) {
-                tg.openTelegramLink('https://t.me' + BOT_USERNAME + '?start=' + param);
+                tg.openTelegramLink(correctLink);
+                tg.close(); 
             } else {
-                window.open('https://t.me' + BOT_USERNAME + '?start=' + param, '_blank');
+                window.open(correctLink, '_blank');
             }
         }
 
