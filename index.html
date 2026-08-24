@@ -276,18 +276,20 @@
             document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
         } 
       
-        function sendMobileDeepLink(param) {
-            var correctLink = 'https://t.me' + BOT_USERNAME + '?start=' + param;
-            if (tg && tg.openTelegramLink) {
-                tg.openTelegramLink(correctLink);
-                // Даем Телеграму 300мс, чтобы обработать ссылку, и только потом закрываем окно
-                setTimeout(function() {
-                    tg.close();
-                }, 300);
-            } else {
-                window.open(correctLink, '_blank');
-            }
-        }
+function sendMobileDeepLink(param) {
+    // Добавляем обязательный слэш '/' после t.me
+    var correctLink = 'https://t.me' + BOT_USERNAME + '?start=' + param;
+
+    if (tg && tg.openTelegramLink) {
+        tg.openTelegramLink(correctLink);
+        // Небольшая задержка перед закрытием Mini App, чтобы Telegram успел прожевать ссылку
+        setTimeout(function() {
+            tg.close();
+        }, 300);
+    } else {
+        window.open(correctLink, '_blank');
+    }
+}
 
         function requestServerUpgrade(businessId) {
             sendMobileDeepLink('buy_' + businessId);
