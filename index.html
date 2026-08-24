@@ -275,21 +275,38 @@
             var fNextCost = lvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (lvlFactory * bizConfig.factory.stepCost);
             document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
         } 
-      
-function sendMobileDeepLink(param) {
-    // Добавляем обязательный слэш '/' после t.me
-    var correctLink = 'https://t.me' + BOT_USERNAME + '?start=' + param;
 
-    if (tg && tg.openTelegramLink) {
-        tg.openTelegramLink(correctLink);
-        // Небольшая задержка перед закрытием Mini App, чтобы Telegram успел прожевать ссылку
-        setTimeout(function() {
-            tg.close();
-        }, 300);
-    } else {
-        window.open(correctLink, '_blank');
-    }
-}
+         function sendMobileDeepLink(param) {
+            // Очищаем юзернейм от возможных лишних символов
+            var pureUsername = BOT_USERNAME.replace('@', '').trim();
+            
+            // 1. Идеальный нативный метод: перезапуск Mini App внутри Telegram с параметром startapp
+            if (tg && tg.openBotApp) {
+                try {
+                    tg.openBotApp(pureUsername, param);
+                    tg.close();
+                    return;
+                } catch(err) {
+                    console.log("openBotApp failed, trying fallback...");
+                }
+            }
+            
+            // 2. Второй нативный метод: открытие внутренней ссылки самого Телеграма (tg://)
+            var tgProtocolLink = 'tg://resolve?domain=' + pureUsername + '&start=' + param;
+            if (tg && tg.openTelegramLink) {
+                try {
+                    tg.openTelegramLink(tgProtocolLink);
+                    tg.close();
+                    return;
+                } catch(err) {
+                    console.log("openTelegramLink failed...");
+                }
+            }
+            
+            // 3. Резервный вариант для обычного браузера на ПК
+            var webLink = 'https://t.me' + pureUsername + '?start=' + param;
+            window.open(webLink, '_blank');
+        }
 
         function requestServerUpgrade(businessId) {
             // Формируем команду для бота (например, buy_bakery)
