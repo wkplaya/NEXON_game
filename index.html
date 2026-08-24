@@ -307,58 +307,70 @@
             // Формируем команду для бота (например, buy_bakery или buy_factory)
             var command = 'buy_' + businessId;
 
-            // Локально рассчитываем и проверяем, хватает ли денег перед отправкой
+            // Считываем актуальные уровни из памяти телефона
+            var currentLvlBakery = parseInt(localStorage.getItem('hexon_lvl_bakery') || '0');
+            var currentLvlFactory = parseInt(localStorage.getItem('hexon_lvl_factory') || '0');
+            var currentBalanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
+
+            // Рассчитываем стоимость улучшения по вашему конфигу бизнеса
             var currentCost = 0;
             if (businessId === 'bakery') {
-                currentCost = lvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (lvlBakery * bizConfig.bakery.stepCost);
+                currentCost = currentLvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (currentLvlBakery * bizConfig.bakery.stepCost);
             } else if (businessId === 'factory') {
-                currentCost = lvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (lvlFactory * bizConfig.factory.stepCost);
+                currentCost = currentLvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (currentLvlFactory * bizConfig.factory.stepCost);
             }
 
-            if (balanceRub < currentCost) {
+            // Проверяем баланс
+            if (currentBalanceRub < currentCost) {
                 if (tg && tg.showPopup) {
                     tg.showPopup({
                         title: '❌ Ошибка',
                         message: 'Недостаточно рублей для покупки! Требуется: ' + currentCost + ' ₽',
                         buttons: [{type: 'ok', text: 'Понятно'}]
                     });
+                } else {
+                    alert('Недостаточно рублей! Требуется: ' + currentCost + ' ₽');
                 }
-                return; // Прерываем выполнение, если денег нет
+                return; // Останавливаем выполнение, если не хватает денег
             }
 
-            // Если деньги есть — отправляем команду в фоновом режиме БЕЗ закрытия приложения
+            // Если денег хватает — отправляем фоновые данные и обновляем визуал
             if (tg) {
                 try {
-                    // Отправляем строку боту (например: buy_bakery)
+                    // Отправляем строку боту скрытно
                     tg.sendData(command);
                     
-                    // Имитируем покупку на фронтенде для мгновенного визуала
-                    balanceRub -= currentCost;
+                    // Вычитаем стоимость и повышаем уровень локально
+                    currentBalanceRub -= currentCost;
+                    localStorage.setItem('hexon_rub', currentBalanceRub.toString());
+
                     if (businessId === 'bakery') {
-                        lvlBakery += 1;
+                        currentLvlBakery += 1;
+                        localStorage.setItem('hexon_lvl_bakery', currentLvlBakery.toString());
                     } else if (businessId === 'factory') {
-                        lvlFactory += 1;
+                        currentLvlFactory += 1;
+                        localStorage.setItem('hexon_lvl_factory', currentLvlFactory.toString());
                     }
                     
-                    // Сохраняем в память телефона
-                    localStorage.setItem('hexon_rub', balanceRub.toString());
-                    localStorage.setItem('hexon_lvl_bakery', lvlBakery.toString());
-                    localStorage.setItem('hexon_lvl_factory', lvlFactory.toString());
+                    // Синхронизируем глобальные переменные вашего скрипта
+                    if (typeof balanceRub !== 'undefined') balanceRub = currentBalanceRub;
+                    if (typeof lvlBakery !== 'undefined') lvlBakery = currentLvlBakery;
+                    if (typeof lvlFactory !== 'undefined') lvlFactory = currentLvlFactory;
                     
-                    // Нативно обновляем интерфейс (уровни, доходы, кнопку)
-                    updateBusinessUI();
-                    updateUI();
+                    // Вызываем ваши родные функции обновления интерфейса сайта
+                    if (typeof updateUI === 'function') updateUI();
+                    if (typeof updateBusinessUI === 'function') updateBusinessUI();
 
+                    // Показываем красивое всплывающее окно Telegram
                     if (tg.showPopup) {
                         tg.showPopup({
                             title: '🏪 Успешно!',
-                            message: 'Запрос на покупку отправлен на сервер. Уровень повышен!',
+                            message: 'Запрос отправлен на сервер. Уровень бизнеса повышен!',
                             buttons: [{type: 'ok', text: 'Отлично'}]
                         });
                     }
                 } catch(e) {
-                    // Если sendData заблокирован из-за типа кнопки, выводим ошибку, а не ломаем приложение
-                    alert("Ошибка отправки данных. Перезапустите Mini App через меню бота.");
+                    alert("Ошибка отправки данных. Пожалуйста, перезапустите Mini App.");
                 }
             }
         }
