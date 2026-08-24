@@ -304,28 +304,62 @@
         }
 
         function requestServerUpgrade(businessId) {
-            // Формируем команду для бота (например, buy_bakery)
+            // Формируем команду для бота (например, buy_bakery или buy_factory)
             var command = 'buy_' + businessId;
 
+            // Локально рассчитываем и проверяем, хватает ли денег перед отправкой
+            var currentCost = 0;
+            if (businessId === 'bakery') {
+                currentCost = lvlBakery === 0 ? bizConfig.bakery.baseCost : bizConfig.bakery.baseCost + (lvlBakery * bizConfig.bakery.stepCost);
+            } else if (businessId === 'factory') {
+                currentCost = lvlFactory === 0 ? bizConfig.factory.baseCost : bizConfig.factory.baseCost + (lvlFactory * bizConfig.factory.stepCost);
+            }
+
+            if (balanceRub < currentCost) {
+                if (tg && tg.showPopup) {
+                    tg.showPopup({
+                        title: '❌ Ошибка',
+                        message: 'Недостаточно рублей для покупки! Требуется: ' + currentCost + ' ₽',
+                        buttons: [{type: 'ok', text: 'Понятно'}]
+                    });
+                }
+                return; // Прерываем выполнение, если денег нет
+            }
+
+            // Если деньги есть — отправляем команду в фоновом режиме БЕЗ закрытия приложения
             if (tg) {
                 try {
-                    // Мгновенно отправляем команду боту в фоновом режиме
+                    // Отправляем строку боту (например: buy_bakery)
                     tg.sendData(command);
                     
-                    // Выводим красивое уведомление прямо в игре, что запрос отправлен
+                    // Имитируем покупку на фронтенде для мгновенного визуала
+                    balanceRub -= currentCost;
+                    if (businessId === 'bakery') {
+                        lvlBakery += 1;
+                    } else if (businessId === 'factory') {
+                        lvlFactory += 1;
+                    }
+                    
+                    // Сохраняем в память телефона
+                    localStorage.setItem('hexon_rub', balanceRub.toString());
+                    localStorage.setItem('hexon_lvl_bakery', lvlBakery.toString());
+                    localStorage.setItem('hexon_lvl_factory', lvlFactory.toString());
+                    
+                    // Нативно обновляем интерфейс (уровни, доходы, кнопку)
+                    updateBusinessUI();
+                    updateUI();
+
                     if (tg.showPopup) {
                         tg.showPopup({
-                            title: '🏪 Запрос отправлен',
-                            message: 'Бот обрабатывает покупку бизнеса. Пожалуйста, перезапустите игру через секунду, чтобы увидеть новый уровень!',
-                            buttons: [{type: 'ok', text: 'Хорошо'}]
+                            title: '🏪 Успешно!',
+                            message: 'Запрос на покупку отправлен на сервер. Уровень повышен!',
+                            buttons: [{type: 'ok', text: 'Отлично'}]
                         });
                     }
                 } catch(e) {
-                    // Резервный вариант, если Mini App открыт не через обычную кнопку
-                    sendMobileDeepLink(command);
+                    // Если sendData заблокирован из-за типа кнопки, выводим ошибку, а не ломаем приложение
+                    alert("Ошибка отправки данных. Перезапустите Mini App через меню бота.");
                 }
-            } else {
-                sendMobileDeepLink(command);
             }
         }
 
