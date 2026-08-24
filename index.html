@@ -223,7 +223,6 @@
         let paramRefCount = urlParams.get('ref'); 
 
         if (paramRub !== null) {
-            localStorage.clear(); 
             localStorage.setItem('hexon_rub', paramRub);
         }
         if (paramNexon !== null) localStorage.setItem('hexon_nexon', paramNexon);
@@ -276,12 +275,14 @@
             document.getElementById('btn-upgrade-factory').innerText = lvlFactory === 0 ? 'Купить за ' + fNextCost + ' руб' : 'Улучшить за ' + fNextCost + ' руб';
         } 
       
-       // МОБИЛЬНОЕ ИСПРАВЛЕНИЕ: Использование нативного API Телеграма с правильным слэшем
         function sendMobileDeepLink(param) {
             var correctLink = 'https://t.me' + BOT_USERNAME + '?start=' + param;
             if (tg && tg.openTelegramLink) {
                 tg.openTelegramLink(correctLink);
-                tg.close(); 
+                // Даем Телеграму 300мс, чтобы обработать ссылку, и только потом закрываем окно
+                setTimeout(function() {
+                    tg.close();
+                }, 300);
             } else {
                 window.open(correctLink, '_blank');
             }
