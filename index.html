@@ -229,9 +229,10 @@
         if (paramLvlBakery !== null) localStorage.setItem('hexon_lvl_bakery', paramLvlBakery);
         if (paramLvlFactory !== null) localStorage.setItem('hexon_lvl_factory', paramLvlFactory);
         if (paramRefCount !== null) localStorage.setItem('hexon_ref_count', paramRefCount);
-        if (paramWorkEnd !== null && paramWorkJob !== null) {
+        // Считываем серверный таймер только если на сервере действительно активна смена
+        if (paramWorkEnd !== null && parseInt(paramWorkEnd) > 0) {
             localStorage.setItem('hexon_work_end', paramWorkEnd);
-            localStorage.setItem('hexon_work_job', paramWorkJob);
+            if (paramWorkJob !== null) localStorage.setItem('hexon_work_job', paramWorkJob);
         }
 
         var balanceRub = parseFloat(localStorage.getItem('hexon_rub') || '0');
@@ -297,9 +298,25 @@
         }
 
         function requestServerWork(jobId) {
+            // Сохраняем данные локально, чтобы таймер сразу пошел визуально
             localStorage.setItem('hexon_work_job', jobId);
-            localStorage.setItem('hexon_work_end', Math.floor(Date.now() / 1000) + 28800);
-            sendMobileDeepLink('work_' + jobId);
+            localStorage.setItem('hexon_work_end', (Math.floor(Date.now() / 1000) + 28800).toString());
+            
+            // Нативно обновляем интерфейс, чтобы кнопка сразу стала оранжевой
+            currentJob = jobId;
+            workEndTimestamp = Math.floor(Date.now() / 1000) + 28800;
+            checkWorkTimer();
+            
+            // Безопасная отправка данных серверу без использования кривых ссылок
+            if (tg) {
+                // Если Mini App открыт через KeyboardButton / Ссылку
+                try {
+                    tg.sendData("work_" + jobId);
+                } catch(e) {
+                    // Резервный вариант, если sendData недоступен в данном типе инлайн-кнопок
+                    sendMobileDeepLink("work_" + jobId);
+                }
+            }
         }
 
         function shareReferralLink() {
